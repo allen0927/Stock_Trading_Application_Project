@@ -1,38 +1,53 @@
 from dataclasses import asdict, dataclass
 import logging
+import requests
+import os
 from typing import Any, List
 
 from sqlalchemy import event
 from sqlalchemy.exc import IntegrityError
 
-from meal_max.clients.redis_client import redis_client
-from meal_max.db import db
-from meal_max.utils.logger import configure_logger
+from stock_app.clients.redis_client import redis_client
+from stock_app.db import db
+from stock_app.utils.logger import configure_logger
+
+
 
 
 logger = logging.getLogger(__name__)
 configure_logger(logger)
 
+"""
+required methods:
+buy / sell stock
+    args: stock symbol, shares buying/selling
+    returns: success
 
+look up:
+    args: stock symbol
+    returns: current market price
+            historical price data
+            brief description of company
+
+"""
 @dataclass
-class Meals(db.Model):
-    __tablename__ = 'meals'
+class Stock:
+    name: str
+    price: float
+    company_info: str
+    historical_prices: float
 
-    id: int = db.Column(db.Integer, primary_key=True)
-    meal: str = db.Column(db.String(80), unique=True, nullable=False)
-    cuisine: str = db.Column(db.String(50))
-    price: float = db.Column(db.Float, nullable=False)
-    difficulty: str = db.Column(db.String(10), nullable=False)
-    battles: int = db.Column(db.Integer, default=0)
-    wins: int = db.Column(db.Integer, default=0)
-    deleted: bool = db.Column(db.Boolean, default=False)
+    key = os.getenv("API_KEY")
+    url = 'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=' + name + '&outputsize=full&apikey=' + key
 
-    def __post_init__(self):
-        if self.price < 0:
-            raise ValueError("Price must be a positive value.")
-        if self.difficulty not in ['LOW', 'MED', 'HIGH']:
-            raise ValueError("Difficulty must be 'LOW', 'MED', or 'HIGH'.")
+    r = requests.get(url)
+    data = r.json()
 
+    def __post_init__(self, data):
+        if 'Error Message' in data:
+            raise ValueError("Invalid Company Symbol")
+
+#everything below here needs changing
     @classmethod
     def create_meal(cls, meal: str, cuisine: str, price: float, difficulty: str, battles: int = 0, wins: int = 0) -> None:
         """
