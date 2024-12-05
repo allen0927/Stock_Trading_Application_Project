@@ -9,6 +9,8 @@ from alpha_vantage.fundamentaldata import FundamentalData
 from .utils.logger import configure_logger
 from .utils.sql_utils import get_db_connection
 from .portfolio_model import PortfolioModel
+import requests
+import os
 import sqlite3
 import logging
 
