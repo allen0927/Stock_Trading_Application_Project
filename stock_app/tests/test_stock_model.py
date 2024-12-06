@@ -2,7 +2,7 @@ from dataclasses import asdict
 
 import pytest
 
-from meal_max.models.kitchen_model import Meals
+from stock_app.stock_app.models.stock_model import Stock
 
 @pytest.fixture
 def mock_redis_client(mocker):
@@ -16,10 +16,10 @@ def mock_redis_client(mocker):
 
 def test_add_meal(session):
     """Test adding a meal to the database."""
-    meal = Meals.create_meal("Spaghetti", "Italian", 12.5, "MED")
+    meal = Stock.create_meal("Spaghetti", "Italian", 12.5, "MED")
 
     # Query back the meal to check it was added
-    result = Meals.query.one()
+    result = Stock.query.one()
     assert result.meal == "Spaghetti"
     assert result.cuisine == "Italian"
     assert result.price == 12.5
