@@ -7,11 +7,9 @@ from alpha_vantage.fundamentaldata import FundamentalData
 
 
 from .utils.logger import configure_logger
-from .utils.sql_utils import get_db_connection
 from .portfolio_model import PortfolioModel
 import requests
 import os
-import sqlite3
 import logging
 
 
@@ -29,116 +27,118 @@ class Stock:
     industry: str
     market_cap: str
     quantity: int
+
+    def __post_init__(self):
+        if self.current_price < 0:
+            raise ValueError(f"Price must be non-negative, got {self.price}")
+
+
+def lookup_stock(symbol: str, ts: TimeSeries, fd: FundamentalData) -> dict:
+    """
+    Get detailed information about a specific stock, including its latest price.
     
-    key = os.getenv("API_KEY")
-    url = 'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=' + name + '&outputsize=full&apikey=' + key
-
-    r = requests.get(url)
-    data = r.json()
-
-    def __post_init__(self, data):
-        if 'Error Message' in data:
-            raise ValueError("Invalid Company Symbol")
-
-
-def buy_stock(symbol: str, quantity: int, user: PortfolioModel):
-    """
-    Buys a specified quantity of stock. If the stock already exists in the database,
-    its quantity is updated; otherwise, it fetches details and inserts the stock.
     Args:
-        symbol (str): The stock symbol.
-        quantity (int): The number of shares to buy.
-        portfolio_model (PortfolioModel): The portfolio model for stock lookups.
-    Raises:
-        ValueError: If the stock data is invalid or there is an error with the database operation.
-    """
-    if not isinstance(symbol, str) or not isinstance(quantity, int) or quantity <= 0:
-        raise ValueError("Invalid symbol or quantity. Symbol must be a string, and quantity must be a positive integer.")
-    try:
-        stock_info = user.look_up_stock(symbol)
-        if "error" in stock_info:
-            raise ValueError(stock_info["error"])
-        
-        with get_db_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT quantity FROM stocks WHERE symbol = ?", (symbol,))
-            existing_stock = cursor.fetchone()
-            if existing_stock:
-                new_quantity = existing_stock[0] + quantity
-                cursor.execute(
-                    "UPDATE stocks SET quantity = ?, current_price = ? WHERE symbol = ?",
-                    (new_quantity, stock_info["current_price"], symbol)
-                )
-                logger.info("Updated stock: %s now has %d shares.", symbol, new_quantity)
-            else:
-                cursor.execute("""
-                    INSERT INTO stocks (symbol, name, current_price, description, sector, industry, market_cap, quantity)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    symbol,
-                    stock_info["name"],
-                    stock_info["current_price"],
-                    stock_info["description"],
-                    stock_info["sector"],
-                    stock_info["industry"],
-                    stock_info["market_cap"],
-                    quantity,
-                ))
-                logger.info("Stock created successfully: %s - %s (%d shares).", symbol, stock_info["name"], quantity)
-            conn.commit()
+        symbol (str): The stock's ticker symbol.
+        ts (TimeSeries): Alpha Vantage TimeSeries object from user portfolio.
+        fd (FundamentalData): Alpha Vantage FundamentalData object from user portfolio.
 
-    except sqlite3.IntegrityError as e:
-        logger.error("Stock with symbol '%s' already exists in the database.", symbol)
-        raise ValueError(f"Stock with symbol '{symbol}' already exists.") from e
-    except sqlite3.Error as e:
-        logger.error("Database error while buying stock '%s': %s", symbol, str(e))
-        raise sqlite3.Error(f"Database error: {str(e)}")
+    Returns:
+        dict: A dictionary containing stock details and the latest price.
+
+    Raises:
+        ValueError: If the stock symbol is invalid or no data is found.
+        Exception: For any other issues with the API.
+    """
+    try:
+        overview_data, _ = fd.get_company_overview(symbol)
+        if not overview_data:
+            raise ValueError(f"No data found for symbol {symbol}")
+
+        price_data, _ = ts.get_quote_endpoint(symbol=symbol)
+        if not price_data or "05. price" not in price_data:
+            raise ValueError(f"No price data found for symbol {symbol}")
+        
+        latest_price = float(price_data["05. price"])
+
+        return {
+            "symbol": overview_data.get("Symbol"),
+            "name": overview_data.get("Name"),
+            "description": overview_data.get("Description"),
+            "sector": overview_data.get("Sector"),
+            "industry": overview_data.get("Industry"),
+            "market_cap": overview_data.get("MarketCapitalization"),
+            "current_price": latest_price,
+        }
     except Exception as e:
-        logger.error("Unexpected error while buying stock '%s': %s", symbol, str(e))
+        logger.error(f"Error fetching stock details: {e}")
+        raise ValueError(f"Unexpected error: {str(e)}")
+
+def get_stock_by_symbol(symbol: str, ts: TimeSeries, fd: FundamentalData) -> Stock:
+    """
+    Retrieves detailed stock information using the Alpha Vantage API.
+
+    Args:
+        symbol (str): The stock's ticker symbol.
+        ts (TimeSeries): Alpha Vantage TimeSeries object.
+        fd (FundamentalData): Alpha Vantage FundamentalData object.
+
+    Returns:
+        Stock: A Stock object representing the requested stock.
+
+    Raises:
+        ValueError: If the stock symbol is invalid or no data is found.
+        Exception: For any other issues with the API.
+    """
+    try:
+        stock_info = lookup_stock(symbol, ts, fd)
+        return Stock(
+            symbol = stock_info["symbol"],
+            name = stock_info["name"],
+            current_price = stock_info["current_price"],
+            description = stock_info["description"],
+            sector = stock_info["sector"],
+            industry = stock_info["industry"],
+            market_cap = stock_info["market_cap"],
+            quantity = 0
+        )
+    except Exception as e:
+        logger.error(f"Error fetching stock data for symbol {symbol}: {e}")
+        raise ValueError(f"Unexpected error: {str(e)}")
+
+
+def stock_historical_data(symbol: str, ts: TimeSeries, size: str) -> list[dict]:
+    """
+    Get historical price data for a stock within a specified date range.
+    """
+    try:
+        data, _ = ts.get_daily_adjusted(symbol=symbol, outputsize=size)
+        if not data:
+            raise ValueError(f"No historical data found for symbol {symbol}")
+
+        historical_data = []
+        for date, stats in data.items():
+            historical_data.append({
+                "date": date,
+                "open": float(stats["1. open"]),
+                "high": float(stats["2. high"]),
+                "low": float(stats["3. low"]),
+                "close": float(stats["4. close"]),
+            })
+        return historical_data
+    except Exception as e:
+        logger.error(f"Error fetching historical stock data: {e}")
         raise ValueError(f"Unexpected error: {str(e)}")
     
-
-def sell_stock(symbol: str, quantity: int):
+def get_latest_price(symbol: str, ts: TimeSeries) -> float:
     """
-    Sells a specified quantity of stock. If quantity reaches zero, the stock is removed from the database.
-    Args:
-        symbol (str): The stock symbol.
-        quantity (int): The number of shares to sell.
-    Raises:
-        ValueError: If the stock does not exist, insufficient quantity, or other database issues.
+    Get the latest market price of a specific stock.
     """
-    if not isinstance(symbol, str) or not isinstance(quantity, int) or quantity <= 0:
-        raise ValueError("Invalid symbol or quantity. Symbol must be a string, and quantity must be a positive integer.")
-    
     try:
-        # Use the context manager to handle the database connection
-        with get_db_connection() as conn:
-            cursor = conn.cursor()
-            # Check if the stock exists in the database
-            cursor.execute("SELECT quantity FROM stocks WHERE symbol = ?", (symbol,))
-            existing_stock = cursor.fetchone()
-            if not existing_stock:
-                raise ValueError(f"Stock {symbol} not found in the portfolio.")
-            current_quantity = existing_stock[0]
-            if current_quantity < quantity:
-                raise ValueError(f"Not enough shares to sell for {symbol}.")
-            if current_quantity == quantity:
-                # Remove the stock from the portfolio
-                cursor.execute("DELETE FROM stocks WHERE symbol = ?", (symbol,))
-                logger.info("Stock selled from portfolio: %s.", symbol)
-            else:
-                # Update the stock's quantity
-                new_quantity = current_quantity - quantity
-                cursor.execute(
-                    "UPDATE stocks SET quantity = ? WHERE symbol = ?",
-                    (new_quantity, symbol)
-                )
-                logger.info("Sold %d shares of %s. Remaining shares: %d.", quantity, symbol, new_quantity)
-            conn.commit()
+        data, _ = ts.get_quote_endpoint(symbol=symbol)
+        if not data:
+            raise ValueError(f"No price data found for symbol {symbol}")
 
-    except sqlite3.Error as e:
-        logger.error("Database error while selling stock '%s': %s", symbol, str(e))
-        raise sqlite3.Error(f"Database error: {str(e)}")
+        return float(data.get("05. price", -1))
     except Exception as e:
-        logger.error("Unexpected error while selling stock '%s': %s", symbol, str(e))
+        logger.error(f"Error fetching stock price: {e}")
         raise ValueError(f"Unexpected error: {str(e)}")
