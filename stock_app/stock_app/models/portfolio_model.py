@@ -1,7 +1,7 @@
 import logging
 import os
 from typing import List, Dict
-
+from dotenv import load_dotenv
 
 from alpha_vantage.timeseries import TimeSeries
 from alpha_vantage.fundamentaldata import FundamentalData
@@ -11,9 +11,12 @@ from stock_app.utils.logger import configure_logger
 logger = logging.getLogger(__name__)
 configure_logger(logger)
 
+load_dotenv()
 
 class PortfolioModel:
     API_KEY = os.getenv("ALPHAVANTAGE_API_KEY")
+    if not API_KEY:
+        raise ValueError("Retrieval of API key failed, check the environment variable")
     ts = TimeSeries(API_KEY)
     fd = FundamentalData(API_KEY)
 
