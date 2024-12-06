@@ -21,7 +21,7 @@ def create_app(config_class=ProductionConfig):
     with app.app_context():
         db.create_all()  # Recreate all tables
 
-    portfolio_model = PortfolioModel(29, 392)
+    portfolio_model = PortfolioModel()
 
     ####################################################
     #
