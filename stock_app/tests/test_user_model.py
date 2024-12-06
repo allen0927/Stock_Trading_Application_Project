@@ -5,6 +5,8 @@ from sqlalchemy.orm import sessionmaker
 from stock_app.db import db
 from stock_app.models.user_model import Users
 
+from app import *
+
 
 @pytest.fixture
 def sample_user():
@@ -12,7 +14,7 @@ def sample_user():
         "username": "testuser",
         "password": "securepassword123"
     }
-
+"""
 @pytest.fixture(scope='session')
 def engine():
     return create_engine('sqlite:///:memory:')
@@ -34,7 +36,7 @@ def session(engine, tables):
 
     session.close()
     transaction.rollback()
-    connection.close()
+    connection.close()"""
 
 ##########################################################
 # User Creation

@@ -13,11 +13,11 @@ configure_logger(logger)
 
 
 class PortfolioModel:
-    API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY")
+    API_KEY = os.getenv("ALPHAVANTAGE_API_KEY")
 
     def __init__(self, userid, funds):
-        self.ts = TimeSeries(api_key=self.API_KEY)
-        self.fd = FundamentalData(api_key=self.API_KEY)
+        self.ts = TimeSeries(self.API_KEY)
+        self.fd = FundamentalData(self.API_KEY)
 
         self.userID = userid
         self.holding_stocks: Dict[str, Stock] = {}
