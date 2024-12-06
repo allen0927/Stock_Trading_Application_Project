@@ -1,15 +1,10 @@
 from typing import List, Dict
 from dataclasses import dataclass
 
-
 from alpha_vantage.timeseries import TimeSeries
 from alpha_vantage.fundamentaldata import FundamentalData
 
-
-from .utils.logger import configure_logger
-from .portfolio_model import PortfolioModel
-import requests
-import os
+from stock_app.utils.logger import configure_logger
 import logging
 
 
