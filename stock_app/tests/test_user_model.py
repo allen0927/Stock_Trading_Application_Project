@@ -1,6 +1,9 @@
 import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
-from meal_max.models.user_model import Users
+from stock_app.db import db
+from stock_app.models.user_model import Users
 
 
 @pytest.fixture
@@ -10,6 +13,28 @@ def sample_user():
         "password": "securepassword123"
     }
 
+@pytest.fixture(scope='session')
+def engine():
+    return create_engine('sqlite:///:memory:')
+
+@pytest.fixture(scope='session')
+def tables(engine):
+    db.metadata.create_all(bind=engine)
+    yield
+    db.metadata.drop_all(bind=engine)
+
+@pytest.fixture
+def session(engine, tables):
+    connection = engine.connect()
+    transaction = connection.begin()
+    Session = sessionmaker(bind=connection)
+    session = Session()
+
+    yield session
+
+    session.close()
+    transaction.rollback()
+    connection.close()
 
 ##########################################################
 # User Creation
