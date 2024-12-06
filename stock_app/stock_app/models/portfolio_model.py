@@ -14,11 +14,10 @@ configure_logger(logger)
 
 class PortfolioModel:
     API_KEY = os.getenv("ALPHAVANTAGE_API_KEY")
+    ts = TimeSeries(API_KEY)
+    fd = FundamentalData(API_KEY)
 
-    def __init__(self, userid, funds):
-        self.ts = TimeSeries(self.API_KEY)
-        self.fd = FundamentalData(self.API_KEY)
-
+    def __init__(self, funds=None, userid=None):
         self.userID = userid
         self.holding_stocks: Dict[str, Stock] = {}
         self.funds = funds
@@ -271,3 +270,43 @@ class PortfolioModel:
         except Exception as e:
             logger.error(f"Error removing interested stock {symbol}: {e}")
             raise
+
+    def clear_all_stocks(self) -> None:
+        """Clear all the stocks and set the funds to 0.0"""
+        self.stock_holdings = {}
+        self.funds = 0.0
+        logger.info("All stocks cleared and funds reset to 0.0.")
+
+    def load_stock(self, stock: Stock) -> None:
+        """
+        Add the given stock to holding_stocks. If the stock already exists, update its quantity.
+        
+        Args:
+            stock (Stock): The stock to add or update in the portfolio.
+        """
+        # Check if the stock already exists in holding_stocks
+        if stock.symbol in self.holding_stocks:
+            existing_stock = self.holding_stocks[stock.symbol]
+            
+            # Update the quantity of the existing stock
+            existing_stock.quantity += stock.quantity
+
+            # Optionally, update other fields if necessary (e.g., current_price, market_cap)
+            existing_stock.current_price = stock.current_price
+            existing_stock.market_cap = stock.market_cap
+
+            logger.info(
+                "Updated stock: %s. New quantity: %d.",
+                stock.symbol,
+                existing_stock.quantity
+            )
+        else:
+            # Add the stock to holding_stocks
+            self.holding_stocks[stock.symbol] = stock
+            logger.info("Added new stock: %s with quantity %d.", stock.symbol, stock.quantity)
+
+    def get_stock_holdings(self):
+        return self.holding_stocks
+    
+    def get_funds(self):
+        return self.funds
