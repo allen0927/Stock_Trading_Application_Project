@@ -45,28 +45,32 @@ def lookup_stock(symbol: str, ts: TimeSeries, fd: FundamentalData) -> dict:
         Exception: For any other issues with the API.
     """
     try:
-        overview_data, _ = fd.get_company_overview(symbol)
-        if not overview_data:
+        overview_data = fd.get_company_overview(symbol)
+        if not overview_data or len(overview_data) < 2:
             raise ValueError(f"No data found for symbol {symbol}")
 
-        price_data, _ = ts.get_quote_endpoint(symbol=symbol)
-        if not price_data or "05. price" not in price_data:
+        price_data = ts.get_quote_endpoint(symbol=symbol)
+        if not price_data or len(price_data) < 2 or "05. price" not in price_data[0]:
             raise ValueError(f"No price data found for symbol {symbol}")
-        
-        latest_price = float(price_data["05. price"])
+
+        latest_price = float(price_data[0]["05. price"])
 
         return {
-            "symbol": overview_data.get("Symbol"),
-            "name": overview_data.get("Name"),
-            "description": overview_data.get("Description"),
-            "sector": overview_data.get("Sector"),
-            "industry": overview_data.get("Industry"),
-            "market_cap": overview_data.get("MarketCapitalization"),
+            "symbol": overview_data[0].get("Symbol"),
+            "name": overview_data[0].get("Name"),
+            "description": overview_data[0].get("Description"),
+            "sector": overview_data[0].get("Sector"),
+            "industry": overview_data[0].get("Industry"),
+            "market_cap": overview_data[0].get("MarketCapitalization"),
             "current_price": latest_price,
         }
+    except ValueError as ve:
+        logger.error(f"Validation error: {ve}")
+        raise
     except Exception as e:
-        logger.error(f"Error fetching stock details: {e}")
+        logger.error(f"Unexpected error fetching stock details: {e}")
         raise ValueError(f"Unexpected error: {str(e)}")
+
 
 def get_stock_by_symbol(symbol: str, ts: TimeSeries, fd: FundamentalData) -> Stock:
     """
@@ -106,12 +110,12 @@ def stock_historical_data(symbol: str, ts: TimeSeries, size: str) -> list[dict]:
     Get historical price data for a stock within a specified date range.
     """
     try:
-        data, _ = ts.get_daily_adjusted(symbol=symbol, outputsize=size)
-        if not data:
+        data = ts.get_daily_adjusted(symbol=symbol, outputsize=size)
+        if not data or len(data) < 2:
             raise ValueError(f"No historical data found for symbol {symbol}")
 
         historical_data = []
-        for date, stats in data.items():
+        for date, stats in data[0].items():
             historical_data.append({
                 "date": date,
                 "open": float(stats["1. open"]),
@@ -120,20 +124,27 @@ def stock_historical_data(symbol: str, ts: TimeSeries, size: str) -> list[dict]:
                 "close": float(stats["4. close"]),
             })
         return historical_data
+    except ValueError as ve:
+        logger.error(f"Validation error: {ve}")
+        raise
     except Exception as e:
-        logger.error(f"Error fetching historical stock data: {e}")
+        logger.error(f"Unexpected error fetching historical stock data: {e}")
         raise ValueError(f"Unexpected error: {str(e)}")
-    
+
+
 def get_latest_price(symbol: str, ts: TimeSeries) -> float:
     """
     Get the latest market price of a specific stock.
     """
     try:
-        data, _ = ts.get_quote_endpoint(symbol=symbol)
-        if not data:
+        data = ts.get_quote_endpoint(symbol=symbol)
+        if not data or len(data) < 2:
             raise ValueError(f"No price data found for symbol {symbol}")
 
-        return float(data.get("05. price", -1))
+        return float(data[0].get("05. price", -1))
+    except ValueError as ve:
+        logger.error(f"Validation error: {ve}")
+        raise
     except Exception as e:
-        logger.error(f"Error fetching stock price: {e}")
+        logger.error(f"Unexpected error fetching stock price: {e}")
         raise ValueError(f"Unexpected error: {str(e)}")
