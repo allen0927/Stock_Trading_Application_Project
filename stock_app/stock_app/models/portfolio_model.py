@@ -14,16 +14,17 @@ configure_logger(logger)
 load_dotenv()
 
 class PortfolioModel:
-    API_KEY = os.getenv("ALPHAVANTAGE_API_KEY")
-    if not API_KEY:
+    _API_KEY = os.getenv("ALPHAVANTAGE_API_KEY")
+    if not _API_KEY:
         raise ValueError("Retrieval of API key failed, check the environment variable")
-    ts = TimeSeries(API_KEY)
-    fd = FundamentalData(API_KEY)
+    ts = TimeSeries(_API_KEY)
+    fd = FundamentalData(_API_KEY)
 
     def __init__(self, funds=None, userid=None):
         self.userID = userid
         self.holding_stocks: Dict[str, Stock] = {}
         self.funds = funds
+
 
     def profile_charge_funds(self, value: float) -> None:
         """
@@ -276,13 +277,14 @@ class PortfolioModel:
 
     def clear_all_stocks(self) -> None:
         """Clear all the stocks and set the funds to 0.0"""
-        self.stock_holdings = {}
+        self.holding_stocks = {}  # Corrected attribute
         self.funds = 0.0
         logger.info("All stocks cleared and funds reset to 0.0.")
 
     def load_stock(self, stock: Stock) -> None:
         """
         Add the given stock to holding_stocks. If the stock already exists, update its quantity.
+        Used for initial loading of user stocks data stored in mongodb
         
         Args:
             stock (Stock): The stock to add or update in the portfolio.
