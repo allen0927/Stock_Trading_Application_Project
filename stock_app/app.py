@@ -181,8 +181,8 @@ def create_app(config_class=ProductionConfig):
             app.logger.error("Invalid request payload for login.")
             raise BadRequest("Invalid request payload. 'username' and 'password' are required.")
 
-        username = data['username']
-        password = data['password']
+        username = data["username"]
+        password = data["password"]
 
         try:
             # Validate user credentials
@@ -192,7 +192,7 @@ def create_app(config_class=ProductionConfig):
 
             # Get user ID
             user_id = Users.get_id_by_username(username)
-
+    
             # Load user's combatants into the battle model
             login_user(user_id, portfolio_model)
 
@@ -203,7 +203,7 @@ def create_app(config_class=ProductionConfig):
             return jsonify({"error": str(e)}), 401
         except Exception as e:
             app.logger.error("Error during login for username %s: %s", username, str(e))
-            return jsonify({"error": "An unexpected error occurred."}), 500
+            return jsonify({"error": "An unexpected error occurred." }), 500
 
 
     @app.route('/api/logout', methods=['POST'])

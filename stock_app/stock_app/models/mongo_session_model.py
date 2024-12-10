@@ -4,6 +4,7 @@ from typing import Any, List
 from stock_app.clients.mongo_client import sessions_collection
 from stock_app.utils.logger import configure_logger
 from stock_app.models.stock_model import Stock
+from stock_app.models.portfolio_model import PortfolioModel
 
 
 logger = logging.getLogger(__name__)
@@ -33,13 +34,12 @@ def login_user(user_id: int, portfolio_model) -> None:
         logger.info("Session found for user ID %d. Loading stocks into PortfolioModel.", user_id)
         portfolio_model.clear_all_stocks()
 
-        stock_holdings = session.get("stock_holdings", {})
         funds = session.get("funds", 0.0)
         portfolio_model.profile_charge_funds(funds)
 
-        for symbol, stock_data in stock_holdings.items():
+        for symbol, stock_data in session.get("stock_holdings", {}):
             logger.debug("Preparing stock: %s (%s)", symbol, stock_data)
-            
+
             stock = Stock(
                 symbol=stock_data["symbol"],
                 name=stock_data["name"],
@@ -90,7 +90,7 @@ def logout_user(user_id: int, portfolio_model) -> None:
             "market_cap": stock.market_cap,
             "quantity": stock.quantity,
         }
-        for symbol, stock in stocks_data.items()
+        for symbol, stock in stocks_data
     }
 
     funds = portfolio_model.get_funds()
