@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import MagicMock, patch
-from stock_app.models.stock_model import Stock, lookup_stock, get_latest_price, stock_historical_data, get_stock_by_symbol
+from stock_app.models.stock_model import Stock, lookup_stock, get_latest_price, stock_historical_data
 
 # Patch the Alpha Vantage API initialization to use a mock API key
 @pytest.fixture(autouse=True)
@@ -57,31 +57,6 @@ def test_lookup_stock_no_data(mock_get_company_overview, mock_get_quote_endpoint
     with pytest.raises(ValueError, match="No data found for symbol"):
         lookup_stock("INVALID", mock_alpha_vantage_timeseries, mock_get_company_overview)
 
-@patch("stock_app.models.stock_model.lookup_stock")
-def test_get_stock_by_symbol(mock_lookup_stock, mock_alpha_vantage_timeseries, mock_alpha_vantage_fundamentaldata):
-    """Test creating a Stock object using get_stock_by_symbol."""
-    mock_lookup_stock.return_value = {
-        "symbol": "AAPL",
-        "name": "Apple Inc.",
-        "current_price": 150.0,
-        "description": "Technology company",
-        "sector": "Technology",
-        "industry": "Consumer Electronics",
-        "market_cap": "2500000000000",
-    }
-
-    stock = get_stock_by_symbol("AAPL", mock_alpha_vantage_timeseries, mock_alpha_vantage_fundamentaldata)
-
-    assert stock.symbol == "AAPL"
-    assert stock.name == "Apple Inc."
-    assert stock.current_price == 150.0
-    assert stock.quantity == 0
-
-@patch("stock_app.models.stock_model.lookup_stock", side_effect=ValueError("No data found for symbol"))
-def test_get_stock_by_symbol_error(mock_lookup_stock, mock_alpha_vantage_timeseries, mock_alpha_vantage_fundamentaldata):
-    """Test error handling in get_stock_by_symbol."""
-    with pytest.raises(ValueError, match="No data found for symbol"):
-        get_stock_by_symbol("INVALID", mock_alpha_vantage_timeseries, mock_alpha_vantage_fundamentaldata)
 
 def test_get_latest_price(mock_alpha_vantage_timeseries):
     """Test retrieving the latest stock price."""
@@ -104,7 +79,7 @@ def test_get_latest_price_no_data(mock_get_quote_endpoint, mock_alpha_vantage_ti
 def test_stock_historical_data(mock_alpha_vantage_timeseries):
     """Test retrieving historical price data."""
     symbol = "AAPL"
-    mock_alpha_vantage_timeseries.get_daily_adjusted.return_value = (
+    mock_alpha_vantage_timeseries.get_daily.return_value = (
         {
             "2023-12-01": {
                 "1. open": "150.00",
