@@ -8,13 +8,13 @@ This API provides a comprehensive solution for managing a stock portfolio. It al
 
 ---
 ### Running the Application
-  - *Run the docker-compose.yml file given with steps:*
+  - *1.Run the vertual machine given with steps:*
+    - source setup_venv.sh
+  - *2.Run the docker-compose.yml file given with steps:*
     - docker-compose build <- This should build the container.
     - docker-compose up -d <- This should run the container.
     - After that, you are able to access the application via: http://localhost:5000* docker-compose up -d.
     - To close and delete the container:* docker-compose down
-  - *Run the vertual machine given with steps:*
-    - source setup_venv.sh
   - *Execute the smoketest before turns on the docker and virtual machine*
     ```Run the command to see result of smoketest:
     - ./smoketest.sh
