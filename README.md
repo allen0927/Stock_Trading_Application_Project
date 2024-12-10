@@ -279,3 +279,5 @@ The application includes additional endpoints for operations such as:
   Logging out user...
   User logged out successfully.
   All tests passed successfully!
+- Some of the test result is generating error due to the error originated from free API key's limit
+  - the **sell stock** and **remove stock** is generating error due to the failure of buy stock, so the stock that should be bought into the holdings did not added successfully, resulting failure in removal and sell 
