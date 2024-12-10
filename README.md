@@ -9,16 +9,17 @@ The Stock Trading Application is a comprehensive web-based system designed to ma
 
 ---
 ### Running the Application
-  - *1.Run the vertual machine given with steps:*
+  - *1.Run the virtual machine given with steps:*
     ```bash
     - source setup_venv.sh
-  - *2.Run the docker-compose.yml file given with steps:*
+  - *2.Ensure you docker engine is open and run the docker-compose.yml file given with steps:*
     ```bash
     docker-compose build <- This should build the container.
     docker-compose up -d <- This should run the container.
   - After that, you are able to access the application via: http://localhost:5000
       ```To close and delete the container:
       docker-compose down
+  - Remember to Replace the API_Key in the .env file with your own key.
   - *Execute the smoketest before turns on the docker and virtual machine*
     ```Run the command to see result of smoketest:
     - ./smoketest.sh
