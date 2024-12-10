@@ -5,6 +5,7 @@ CS 411 Final Project: Ting-Hung Jen
 ## Overview
 
 The Stock Trading Application is a comprehensive web-based system designed to manage user portfolios and facilitate interactions with stock market data. Built using Flask, the application serves as a platform for users to manage their investments, retrieve real-time market data, and execute various portfolio operations. The project integrates RESTful APIs, database management, and external financial data sources to deliver a robust and scalable solution. It allows users to perform operations such as user authentication, portfolio management, stock transactions (buy/sell), retrieving stock data, and updating portfolio details. The application integrates with the Alpha Vantage API to fetch real-time stock data and utilizes a database for managing user data and portfolios.
+(*Note: There is a limit of API call of 25 requests a day for free version*)
 
 ---
 ### Running the Application
