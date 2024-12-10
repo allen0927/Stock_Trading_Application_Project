@@ -167,10 +167,10 @@ curl -X GET http://localhost:5000/api/health
 The application includes additional endpoints for operations such as:
 
 - **Add/Remove Funds**
-- Buy/Sell Stocks
-- Update Stock Prices
-- Calculate Portfolio/Asset Values
-- Each route follows a similar format and functionality. Please refer to the application code for detailed specifications.
+- - Buy/Sell Stocks
+- - Update Stock Prices
+- - Calculate Portfolio/Asset Values
+- - Each route follows a similar format and functionality. Please refer to the application code for detailed specifications.
 
 - **Running the Application**
 
