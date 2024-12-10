@@ -102,19 +102,22 @@ logout_user() {
 ##############################################
 
 # Function to get stock by symbol
+# implemented success
 get_stock_by_symbol(){
   symbol=$1
 
   echo "Getting stock info by symbol ($symbol)"
-  response=$(curl -s -X GET "$BASE_URL/get-stock-by-symbol/$symbol")
+  response=$(curl -s -X GET "$BASE_URL/get-stock-by-symbol?symbol=$symbol")
   if echo "$response" | grep -q '"status": "success"'; then
     echo "Stock retrieved successfully by symbol ($symbol)."
+    echo "$response"
     if [ "$ECHO_JSON" = true ]; then
       echo "Stock JSON ($symbol):"
       echo "$response" | jq .
     fi
   else
     echo "Failed to get stock by symbol ($symbol)."
+    echo "$response"
     exit 1
   fi
 }
@@ -122,17 +125,23 @@ get_stock_by_symbol(){
 # Function to get stock historical data
 stock_historical_data(){
   symbol=$1
+  size=$2
 
-  echo "Getting stock history by symbol ($symbol) with size (5)"
-  response=$(curl -s -X GET "$BASE_URL/stock-historical-data/$symbol/5")
+  echo "Getting stock historical data for symbol ($symbol) with size ($size)..."
+  response=$(curl -s -X GET "$BASE_URL/retrieve-stock-historical-data?symbol=$symbol&size=$size" \
+    -H "Content-Type: application/json")
+
   if echo "$response" | grep -q '"status": "success"'; then
-    echo "Stock history retrieved successfully ($symbol)."
+    echo "Stock historical data retrieved successfully for symbol ($symbol)."
+    echo "$response"
     if [ "$ECHO_JSON" = true ]; then
-      echo "Stock history ($symbol):"
+      echo "Historical Data for ($symbol):"
       echo "$response" | jq .
     fi
   else
-    echo "Failed to get stock history ($symbol)."
+    echo "Failed to get stock historical data for symbol ($symbol)."
+    echo "Response:"
+    echo "$response"
     exit 1
   fi
 }
@@ -141,20 +150,24 @@ stock_historical_data(){
 get_latest_price(){
   symbol=$1
 
-  echo "Getting stock latest price by symbol ($symbol)"
-  response=$(curl -s -X GET "$BASE_URL/get-latest-price/$symbol")
+  echo "Getting stock latest price for symbol ($symbol)..."
+  response=$(curl -s -X GET "$BASE_URL/fetch-latest-price?symbol=$symbol" \
+    -H "Content-Type: application/json")
+
   if echo "$response" | grep -q '"status": "success"'; then
-    echo "Stock latest price retrieved successfully ($symbol)."
+    echo "Stock latest price retrieved successfully for symbol ($symbol)."
+    echo "$response"
     if [ "$ECHO_JSON" = true ]; then
-      echo "Stock latest price ($symbol):"
+      echo "Stock latest price for ($symbol):"
       echo "$response" | jq .
     fi
   else
-    echo "Failed to get stock latest price ($symbol)."
+    echo "Failed to get stock latest price for symbol ($symbol)."
+    echo "Response:"
+    echo "$response"
     exit 1
   fi
 }
-
 
 ##############################################
 #
@@ -166,11 +179,13 @@ get_latest_price(){
 profile_charge_funds(){
   value=$1
   echo "Adding $value worth of funds..."
-  response=$(curl -s -X PUT "$BASE_URL/profile-charge-funds/$value")
+  response=$(curl -s -X PUT "$BASE_URL/profile-charge-funds?value=$value" -H "Content-Type: application/json")
   if echo "$response" | grep -q '"status": "success"'; then
     echo "Added $value of funds."
+    echo "$response"
   else
     echo "Failed to add funds."
+    echo "$response"
     exit 1
   fi
 }
@@ -182,12 +197,14 @@ get_user_portfolio(){
   response=$(curl -s -X GET "$BASE_URL/display-portfolio")
   if echo "$response" | grep -q '"status": "success"'; then
     echo "User portfolio retrieved successfully."
+    echo "$response"
     if [ "$ECHO_JSON" = true ]; then
       echo "User portfolio:"
       echo "$response" | jq .
     fi
   else
     echo "Failed to get user portfolio."
+    echo "$response"
     exit 1
   fi
 }
@@ -199,12 +216,14 @@ calculate_portfolio_value(){
   response=$(curl -s -X GET "$BASE_URL/calculate-portfolio-value")
   if echo "$response" | grep -q '"status": "success"'; then
     echo "Calculation success."
+    echo "$response"
     if [ "$ECHO_JSON" = true ]; then
       echo "Value:"
       echo "$response" | jq .
     fi
   else
     echo "Failed to calculate user portfolio value."
+    echo "$response"
     exit 1
   fi
 }
@@ -215,27 +234,14 @@ buy_new_stock(){
   symbol=$1
   quantity=$2
 
-  echo "Buying ($quantity) shares of stock ($symbol)"
-  response=$(curl -s -X POST "$BASE_URL/buy-stock/$symbol/$quantity")
+  echo "Buying ($quantity) shares of stock ($symbol)..."
+  response=$(curl -s -X POST "$BASE_URL/buy-stock?symbol=$symbol&quantity=$quantity" -H "Content-Type: application/json")
   if echo "$response" | grep -q '"status": "success"'; then
     echo "Purchase successful."
+    echo "$response"
   else
     echo "Purchase failed."
-    exit 1
-  fi
-}
-
-# Function to buy existing stock
-buy_stock(){
-  symbol=$1
-  quantity=$2
-  
-  echo "Buying ($quantity) shares of stock ($symbol)"
-  response=$(curl -s -X PUT "$BASE_URL/buy-stock/$symbol/$quantity")
-  if echo "$response" | grep -q '"status": "success"'; then
-    echo "Purchase successful."
-  else
-    echo "Purchase failed."
+    echo "$response"
     exit 1
   fi
 }
@@ -245,12 +251,14 @@ sell_stock(){
   symbol=$1
   quantity=$2
   
-  echo "Selling ($quantity) shares of stock ($symbol)"
-  response=$(curl -s -X PUT "$BASE_URL/sell-stock/$symbol/$quantity")
+  echo "Selling ($quantity) shares of stock ($symbol)..."
+  response=$(curl -s -X PUT "$BASE_URL/sell-stock?symbol=$symbol&quantity=$quantity" -H "Content-Type: application/json")
   if echo "$response" | grep -q '"status": "success"'; then
     echo "Sell successful."
+    echo "$response"
   else
     echo "Sell failed."
+    echo "$response"
     exit 1
   fi
 }
@@ -260,12 +268,14 @@ sell_stock(){
 remove_interested_stock(){
   symbol=$1
 
-  echo "Removing stock ($symbol)"
-  response=$(curl -s -X DELETE "$BASE_URL/remove-interested-stock/$symbol")
+  echo "Removing stock ($symbol)..."
+  response=$(curl -s -X DELETE "$BASE_URL/remove-interested-stock?symbol=$symbol" -H "Content-Type: application/json")
   if echo "$response" | grep -q '"status": "success"'; then
     echo "Remove successful."
+    echo "$response"
   else
     echo "Remove failed."
+    echo "$response"
     exit 1
   fi
 }
@@ -278,12 +288,14 @@ get_stock_holdings(){
   response=$(curl -s -X GET "$BASE_URL/get-stock-holdings")
   if echo "$response" | grep -q '"status": "success"'; then
     echo "Get holdings successful."
+    echo "$response"
     if [ "$ECHO_JSON" = true ]; then
       echo "Holdings:"
       echo "$response" | jq .
     fi
   else
     echo "Get holdings failed."
+    echo "$response"
     exit 1
   fi
 }
@@ -294,12 +306,14 @@ get_funds(){
   response=$(curl -s -X GET "$BASE_URL/get-funds")
   if echo "$response" | grep -q '"status": "success"'; then
     echo "Get holdings successful."
+    echo "$response"
     if [ "$ECHO_JSON" = true ]; then
       echo "Funds:"
       echo "$response" | jq .
     fi
   else
     echo "Get funds failed."
+    echo "$response"
     exit 1
   fi
 }
@@ -316,6 +330,7 @@ init_db() {
     fi
   else
     echo "Failed to initialize the database."
+    echo "$response"
     exit 1
   fi
 }
@@ -328,14 +343,13 @@ init_db
 create_user
 login_user
 
-get_stock_by_symbol "AAPL"
-stock_historical_data "AAPL"
-get_latest_price "AAPL"
+get_stock_by_symbol "IBM"
+stock_historical_data "AAPL" "full"
+get_latest_price "IBM"
 
 profile_charge_funds 390000.00
-buy_new_stock AAPL 4
+buy_new_stock IBM 4
 buy_new_stock SBUX 4
-buy_stock AAPL 2
 sell_stock SBUX 1
 remove_interested_stock SBUX
 buy_new_stock IBM 8
@@ -345,4 +359,5 @@ calculate_portfolio_value
 get_stock_holdings
 get_funds
 
+logout_user
 echo "All tests passed successfully!"
