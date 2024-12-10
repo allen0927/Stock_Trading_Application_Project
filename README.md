@@ -1,5 +1,5 @@
 # Stock_Trading_Application_Project
-CS 411 Final Project
+CS 411 Final Project: Ting-Hung Jen
 # Stock Portfolio Management API
 
 ## Overview
