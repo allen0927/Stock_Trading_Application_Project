@@ -9,9 +9,11 @@ The Stock Trading Application is a comprehensive web-based system designed to ma
 
 ---
 ### Running the Application
-  - ```*1.Run the vertual machine given with steps:*
+  - *1.Run the vertual machine given with steps:*
+    ```bash
     - source setup_venv.sh
-  - ```*2.Run the docker-compose.yml file given with steps:*
+  - *2.Run the docker-compose.yml file given with steps:*
+    ```bash
     docker-compose build <- This should build the container.
     docker-compose up -d <- This should run the container.
   - After that, you are able to access the application via: http://localhost:5000
