@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Variables
-IMAGE_NAME="meal_max"
+IMAGE_NAME="stock_app"
 CONTAINER_TAG="0.2.0"
 HOST_PORT=5001
 CONTAINER_PORT=5000
