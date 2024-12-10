@@ -14,6 +14,22 @@ configure_logger(logger)
 
 @dataclass
 class Stock:
+    """Represents a stock with relevant attributes.
+
+    Attributes:
+        symbol (str): The stock ticker symbol.
+        name (str): The name of the company.
+        current_price (float): The latest fetched market price of the stock.
+        description (str): A brief description of the company.
+        sector (str): The sector to which the company belongs.
+        industry (str): The industry of the company.
+        market_cap (str): The company's market capitalization.
+        quantity (int): The number of shares held (default is 0).
+
+    Raises:
+        ValueError: If `current_price` is negative.
+        ValueError: If `quantity` is negative.
+    """
     symbol: str
     name: str
     current_price: float
@@ -26,23 +42,27 @@ class Stock:
     def __post_init__(self):
         if self.current_price < 0:
             raise ValueError(f"Price must be non-negative, got {self.price}")
+        if self.quantity < 0:
+            raise ValueError(f"Quantity must be non-negative, got {self.quantity}")
+        
 
 
 def lookup_stock(symbol: str, ts: TimeSeries, fd: FundamentalData) -> dict:
     """
-    Get detailed information about a specific stock, including its latest price.
-    
+    Fetch detailed stock information, including the latest price.
+
     Args:
-        symbol (str): The stock's ticker symbol.
-        ts (TimeSeries): Alpha Vantage TimeSeries object from user portfolio.
-        fd (FundamentalData): Alpha Vantage FundamentalData object from user portfolio.
+        symbol (str): The stock ticker symbol.
+        ts (TimeSeries): An Alpha Vantage TimeSeries object for fetching stock price data.
+        fd (FundamentalData): An Alpha Vantage FundamentalData object for fetching company overview.
 
     Returns:
-        dict: A dictionary containing stock details and the latest price.
+        dict: A dictionary containing stock details such as symbol, name, description, 
+        sector, industry, market capitalization, and current price.
 
     Raises:
-        ValueError: If the stock symbol is invalid or no data is found.
-        Exception: For any other issues with the API.
+        ValueError: If the stock symbol is invalid or no data is retrieved.
+        Exception: For API or unexpected errors.
     """
     try:
         overview_data = fd.get_company_overview(symbol)
@@ -74,19 +94,19 @@ def lookup_stock(symbol: str, ts: TimeSeries, fd: FundamentalData) -> dict:
 
 def get_stock_by_symbol(symbol: str, ts: TimeSeries, fd: FundamentalData) -> Stock:
     """
-    Retrieves detailed stock information using the Alpha Vantage API.
+    Retrieve detailed stock information from API call and store as a `Stock` object.
 
     Args:
-        symbol (str): The stock's ticker symbol.
-        ts (TimeSeries): Alpha Vantage TimeSeries object.
-        fd (FundamentalData): Alpha Vantage FundamentalData object.
+        symbol (str): The stock ticker symbol.
+        ts (TimeSeries): An Alpha Vantage TimeSeries object for fetching stock price data.
+        fd (FundamentalData): An Alpha Vantage FundamentalData object for fetching company overview.
 
     Returns:
-        Stock: A Stock object representing the requested stock.
+        Stock: A `Stock` object containing detailed information about the stock.
 
     Raises:
-        ValueError: If the stock symbol is invalid or no data is found.
-        Exception: For any other issues with the API.
+        ValueError: If the stock symbol is invalid or no data is retrieved.
+        Exception: For API or unexpected errors.
     """
     try:
         stock_info = lookup_stock(symbol, ts, fd)
@@ -107,7 +127,20 @@ def get_stock_by_symbol(symbol: str, ts: TimeSeries, fd: FundamentalData) -> Sto
 
 def stock_historical_data(symbol: str, ts: TimeSeries, size: str) -> list[dict]:
     """
-    Get historical price data for a stock within a specified date range.
+    Fetch historical price data for a stock.
+
+    Args:
+        symbol (str): The stock ticker symbol.
+        ts (TimeSeries): An Alpha Vantage TimeSeries object for fetching stock data.
+        size (str): The size of the data set to retrieve ('compact' or 'full').
+
+    Returns:
+        list[dict]: A list of dictionaries, each containing historical price data, 
+        including the date, open, high, low, and close prices.
+
+    Raises:
+        ValueError: If no historical data is found for the stock symbol.
+        Exception: For API or unexpected errors.
     """
     try:
         data = ts.get_daily_adjusted(symbol=symbol, outputsize=size)
@@ -134,7 +167,18 @@ def stock_historical_data(symbol: str, ts: TimeSeries, size: str) -> list[dict]:
 
 def get_latest_price(symbol: str, ts: TimeSeries) -> float:
     """
-    Get the latest market price of a specific stock.
+    Retrieve the latest market price for a specific stock.
+
+    Args:
+        symbol (str): The stock ticker symbol.
+        ts (TimeSeries): An Alpha Vantage TimeSeries object for fetching stock data.
+
+    Returns:
+        float: The latest market price of the stock.
+
+    Raises:
+        ValueError: If no price data is found for the stock symbol.
+        Exception: For API or unexpected errors.
     """
     try:
         data = ts.get_quote_endpoint(symbol=symbol)
