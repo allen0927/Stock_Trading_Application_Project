@@ -7,7 +7,7 @@ CS 411 Final Project: Ting-Hung Jen
 This API provides a comprehensive solution for managing a stock portfolio. It allows users to perform operations such as user authentication, portfolio management, stock transactions (buy/sell), retrieving stock data, and updating portfolio details. The application integrates with the Alpha Vantage API to fetch real-time stock data and utilizes a database for managing user data and portfolios.
 
 ---
-###Running the Application
+### Running the Application
   - *Run the docker-compose.yml file given with steps:*
     - docker-compose build <- This should build the container.
     - docker-compose up -d <- This should run the container.
