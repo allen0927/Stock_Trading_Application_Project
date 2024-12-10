@@ -118,7 +118,6 @@ get_stock_by_symbol(){
   else
     echo "Failed to get stock by symbol ($symbol)."
     echo "$response"
-    exit 1
   fi
 }
 
@@ -141,8 +140,6 @@ stock_historical_data(){
   else
     echo "Failed to get stock historical data for symbol ($symbol)."
     echo "Response:"
-    echo "$response"
-    exit 1
   fi
 }
 
@@ -165,7 +162,6 @@ get_latest_price(){
     echo "Failed to get stock latest price for symbol ($symbol)."
     echo "Response:"
     echo "$response"
-    exit 1
   fi
 }
 
@@ -242,7 +238,6 @@ buy_new_stock(){
   else
     echo "Purchase failed."
     echo "$response"
-    exit 1
   fi
 }
 
@@ -259,7 +254,6 @@ sell_stock(){
   else
     echo "Sell failed."
     echo "$response"
-    exit 1
   fi
 }
 
@@ -276,7 +270,6 @@ remove_interested_stock(){
   else
     echo "Remove failed."
     echo "$response"
-    exit 1
   fi
 }
 
