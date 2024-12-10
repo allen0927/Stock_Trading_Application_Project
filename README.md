@@ -19,7 +19,7 @@ The Stock Trading Application is a comprehensive web-based system designed to ma
   - After that, you are able to access the application via: http://localhost:5000
       ```To close and delete the container:
       docker-compose down
-  - Remember to Replace the API_Key in the .env file with your own key.
+  - **Remember to Replace the API_Key in the .env file with your own key.**
   - *Execute the smoketest before turns on the docker and virtual machine*
     ```Run the command to see result of smoketest:
     - ./smoketest.sh
