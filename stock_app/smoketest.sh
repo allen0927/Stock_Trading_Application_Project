@@ -97,166 +97,209 @@ logout_user() {
 
 ##############################################
 #
-# Meals
+# Stock
 #
 ##############################################
 
-# Function to add a meal (combatant)
-create_meal() {
-  echo "Adding a combatant..."
-  curl -s -X POST "$BASE_URL/create-meal" -H "Content-Type: application/json" \
-    -d '{"meal":"Spaghetti", "cuisine":"Italian", "price":12.5, "difficulty":"MED"}' | grep -q '"status": "combatant added"'
-  if [ $? -eq 0 ]; then
-    echo "Combatant added successfully."
-  else
-    echo "Failed to add combatant."
-    exit 1
-  fi
-}
+# Function to get stock by symbol
+get_stock_by_symbol(){
+  symbol=$1
 
-# Function to delete a meal by ID (1)
-delete_meal_by_id() {
-  echo "Deleting meal by ID (1)..."
-  response=$(curl -s -X DELETE "$BASE_URL/delete-meal/1")
-  if echo "$response" | grep -q '"status": "meal deleted"'; then
-    echo "Meal deleted successfully by ID (1)."
-  else
-    echo "Failed to delete meal by ID (1)."
-    exit 1
-  fi
-}
-
-# Function to get a meal by ID (1)
-get_meal_by_id() {
-  echo "Getting meal by ID (1)..."
-  response=$(curl -s -X GET "$BASE_URL/get-meal-by-id/1")
+  echo "Getting stock info by symbol ($symbol)"
+  response=$(curl -s -X GET "$BASE_URL/get-stock-by-symbol/$symbol")
   if echo "$response" | grep -q '"status": "success"'; then
-    echo "Meal retrieved successfully by ID (1)."
+    echo "Stock retrieved successfully by symbol ($symbol)."
     if [ "$ECHO_JSON" = true ]; then
-      echo "Meal JSON (ID 1):"
+      echo "Stock JSON ($symbol):"
       echo "$response" | jq .
     fi
   else
-    echo "Failed to get meal by ID (1)."
+    echo "Failed to get stock by symbol ($symbol)."
     exit 1
   fi
 }
 
-# Function to get a meal by name
-get_meal_by_name() {
-  echo "Getting meal by name (Spaghetti)..."
-  response=$(curl -s -X GET "$BASE_URL/get-meal-by-name/Spaghetti")
+# Function to get stock historical data
+stock_historical_data(){
+  symbol=$1
+
+  echo "Getting stock history by symbol ($symbol) with size (5)"
+  response=$(curl -s -X GET "$BASE_URL/stock-historical-data/$symbol/5")
   if echo "$response" | grep -q '"status": "success"'; then
-    echo "Meal retrieved successfully by name (Spaghetti)."
+    echo "Stock history retrieved successfully ($symbol)."
     if [ "$ECHO_JSON" = true ]; then
-      echo "Meal JSON (Spaghetti):"
+      echo "Stock history ($symbol):"
       echo "$response" | jq .
     fi
   else
-    echo "Failed to get meal by name (Spaghetti)."
+    echo "Failed to get stock history ($symbol)."
     exit 1
   fi
 }
 
-############################################
-#
-# Battle
-#
-############################################
+# Function to get stock latest price
+get_latest_price(){
+  symbol=$1
 
-# Function to clear the combatants
-clear_combatants() {
-  echo "Clearing combatants..."
-  curl -s -X POST "$BASE_URL/clear-combatants" -H "Content-Type: application/json" | grep -q '"status": "combatants cleared"'
-  if [ $? -eq 0 ]; then
-    echo "Combatants cleared successfully."
-  else
-    echo "Failed to clear combatants."
-    exit 1
-  fi
-}
-
-# Function to get the current list of combatants
-get_combatants() {
-  echo "Getting the current list of combatants..."
-  response=$(curl -s -X GET "$BASE_URL/get-combatants")
-
-  # Check if the response contains combatants or an empty list
-  if echo "$response" | grep -q '"combatants"'; then
-    echo "Combatants retrieved successfully."
-    if [ "$ECHO_JSON" = true ]; then
-      echo "Combatants JSON:"
-      echo "$response" | jq .
-    fi
-  else
-    echo "Failed to get combatants or no combatants found."
-    if [ "$ECHO_JSON" = true ]; then
-      echo "Error or empty response:"
-      echo "$response" | jq .
-    fi
-    exit 1
-  fi
-}
-
-# Function to prepare a combatant for battle
-prep_combatant() {
-  echo "Preparing combatant for battle..."
-  curl -s -X POST "$BASE_URL/prep-combatant" -H "Content-Type: application/json" \
-    -d '{"meal":"Spaghetti"}' | grep -q '"status": "combatant prepared"'
-  if [ $? -eq 0 ]; then
-    echo "Combatant prepared successfully."
-  else
-    echo "Failed to prepare combatant."
-    exit 1
-  fi
-}
-
-# Function to run a battle
-run_battle() {
-  echo "Running a battle..."
-  curl -s -X GET "$BASE_URL/battle" | grep -q '"status": "battle complete"'
-  if [ $? -eq 0 ]; then
-    echo "Battle completed successfully."
-  else
-    echo "Failed to complete battle."
-    exit 1
-  fi
-}
-
-######################################################
-#
-# Leaderboard
-#
-######################################################
-
-# Function to get the leaderboard sorted by wins
-get_leaderboard_wins() {
-  echo "Getting leaderboard sorted by wins..."
-  response=$(curl -s -X GET "$BASE_URL/leaderboard?sort=wins")
+  echo "Getting stock latest price by symbol ($symbol)"
+  response=$(curl -s -X GET "$BASE_URL/get-latest-price/$symbol")
   if echo "$response" | grep -q '"status": "success"'; then
-    echo "Leaderboard by wins retrieved successfully."
+    echo "Stock latest price retrieved successfully ($symbol)."
     if [ "$ECHO_JSON" = true ]; then
-      echo "Leaderboard JSON (sorted by wins):"
+      echo "Stock latest price ($symbol):"
       echo "$response" | jq .
     fi
   else
-    echo "Failed to get leaderboard by wins."
+    echo "Failed to get stock latest price ($symbol)."
     exit 1
   fi
 }
 
-# Function to get the leaderboard sorted by win percentage
-get_leaderboard_win_pct() {
-  echo "Getting leaderboard sorted by win percentage..."
-  response=$(curl -s -X GET "$BASE_URL/leaderboard?sort=win_pct")
+
+##############################################
+#
+# Portfolio
+#
+##############################################
+
+#Function to add funds to user's profile
+profile_charge_funds(){
+  value=$1
+  echo "Adding $value worth of funds..."
+  response=$(curl -s -X PUT "$BASE_URL/profile-charge-funds/$value")
   if echo "$response" | grep -q '"status": "success"'; then
-    echo "Leaderboard by win percentage retrieved successfully."
+    echo "Added $value of funds."
+  else
+    echo "Failed to add funds."
+    exit 1
+  fi
+}
+
+
+# Function to get user portfolio
+get_user_portfolio(){
+  echo "Getting user portfolio"
+  response=$(curl -s -X GET "$BASE_URL/display-portfolio")
+  if echo "$response" | grep -q '"status": "success"'; then
+    echo "User portfolio retrieved successfully."
     if [ "$ECHO_JSON" = true ]; then
-      echo "Leaderboard JSON (sorted by win percentage):"
+      echo "User portfolio:"
       echo "$response" | jq .
     fi
   else
-    echo "Failed to get leaderboard by win percentage."
+    echo "Failed to get user portfolio."
+    exit 1
+  fi
+}
+
+
+# Function to calculate portfolio value
+calculate_portfolio_value(){
+  echo "Calculating user portfolio value"
+  response=$(curl -s -X GET "$BASE_URL/calculate-portfolio-value")
+  if echo "$response" | grep -q '"status": "success"'; then
+    echo "Calculation success."
+    if [ "$ECHO_JSON" = true ]; then
+      echo "Value:"
+      echo "$response" | jq .
+    fi
+  else
+    echo "Failed to calculate user portfolio value."
+    exit 1
+  fi
+}
+
+
+# Function to buy new stock
+buy_new_stock(){
+  symbol=$1
+  quantity=$2
+
+  echo "Buying ($quantity) shares of stock ($symbol)"
+  response=$(curl -s -X POST "$BASE_URL/buy-stock/$symbol/$quantity")
+  if echo "$response" | grep -q '"status": "success"'; then
+    echo "Purchase successful."
+  else
+    echo "Purchase failed."
+    exit 1
+  fi
+}
+
+# Function to buy existing stock
+buy_stock(){
+  symbol=$1
+  quantity=$2
+  
+  echo "Buying ($quantity) shares of stock ($symbol)"
+  response=$(curl -s -X PUT "$BASE_URL/buy-stock/$symbol/$quantity")
+  if echo "$response" | grep -q '"status": "success"'; then
+    echo "Purchase successful."
+  else
+    echo "Purchase failed."
+    exit 1
+  fi
+}
+
+# Function to sell stock
+sell_stock(){
+  symbol=$1
+  quantity=$2
+  
+  echo "Selling ($quantity) shares of stock ($symbol)"
+  response=$(curl -s -X PUT "$BASE_URL/sell-stock/$symbol/$quantity")
+  if echo "$response" | grep -q '"status": "success"'; then
+    echo "Sell successful."
+  else
+    echo "Sell failed."
+    exit 1
+  fi
+}
+
+
+# Function to remove interested stock
+remove_interested_stock(){
+  symbol=$1
+
+  echo "Removing stock ($symbol)"
+  response=$(curl -s -X DELETE "$BASE_URL/remove-interested-stock/$symbol")
+  if echo "$response" | grep -q '"status": "success"'; then
+    echo "Remove successful."
+  else
+    echo "Remove failed."
+    exit 1
+  fi
+}
+
+
+
+# Function to get stock holdings
+get_stock_holdings(){
+  echo "Getting stock holdings..."
+  response=$(curl -s -X GET "$BASE_URL/get-stock-holdings")
+  if echo "$response" | grep -q '"status": "success"'; then
+    echo "Get holdings successful."
+    if [ "$ECHO_JSON" = true ]; then
+      echo "Holdings:"
+      echo "$response" | jq .
+    fi
+  else
+    echo "Get holdings failed."
+    exit 1
+  fi
+}
+
+# Function to get current funds
+get_funds(){
+  echo "Getting funds..."
+  response=$(curl -s -X GET "$BASE_URL/get-funds")
+  if echo "$response" | grep -q '"status": "success"'; then
+    echo "Get holdings successful."
+    if [ "$ECHO_JSON" = true ]; then
+      echo "Funds:"
+      echo "$response" | jq .
+    fi
+  else
+    echo "Get funds failed."
     exit 1
   fi
 }
@@ -284,21 +327,22 @@ check_health
 init_db
 create_user
 login_user
-create_meal
-clear_combatants
-prep_combatant
-prep_combatant
-get_combatants
-run_battle
-prep_combatant
-run_battle
-prep_combatant
-run_battle
-get_leaderboard_wins
-get_leaderboard_win_pct
-logout_user
-get_meal_by_name
-get_meal_by_id
-delete_meal_by_id
+
+get_stock_by_symbol "AAPL"
+stock_historical_data "AAPL"
+get_latest_price "AAPL"
+
+profile_charge_funds 390000.00
+buy_new_stock AAPL 4
+buy_new_stock SBUX 4
+buy_stock AAPL 2
+sell_stock SBUX 1
+remove_interested_stock SBUX
+buy_new_stock IBM 8
+
+get_user_portfolio
+calculate_portfolio_value
+get_stock_holdings
+get_funds
 
 echo "All tests passed successfully!"

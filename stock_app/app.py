@@ -362,7 +362,7 @@ def create_app(config_class=ProductionConfig):
             app.logger.info('Adding funds...')
             portfolio_model.profile_charge_funds(value)
             app.logger.info('Funds added.')
-            return make_response(jsonify({'status': value + ' added'}), 200)
+            return make_response(jsonify({'status': 'success'}), 200)
         
         except ValueError:
             app.logger.error("Attempt to add negative value")
@@ -583,7 +583,7 @@ def create_app(config_class=ProductionConfig):
             
             app.logger.info(f"Favoriting " + symbol + "...")
             portfolio_model.add_interested_stock(symbol)
-            return make_response(jsonify({'status': 'favorited'}), 200)
+            return make_response(jsonify({'status': 'success'}), 200)
         
         except ValueError:
             app.logger.error("Stock already exists in portfolio")
@@ -616,7 +616,7 @@ def create_app(config_class=ProductionConfig):
             
             app.logger.info(f"Deleting " + symbol + " from portfolio...")
             portfolio_model.remove_interested_stock(symbol)
-            return make_response(jsonify({'status': 'deleted'}), 200)
+            return make_response(jsonify({'status': 'success'}), 200)
         
         except ValueError:
             app.logger.error("Stock does not exists in portfolio")
@@ -641,7 +641,7 @@ def create_app(config_class=ProductionConfig):
         try:       
             app.logger.info(f"Clearing portfolio...")
             portfolio_model.clear_all_stocks()
-            return make_response(jsonify({'status': 'cleared'}), 200)
+            return make_response(jsonify({'status': 'success'}), 200)
         
         except Exception as e:
             app.logger.error(f"Error clearing portfolio: {e}")
