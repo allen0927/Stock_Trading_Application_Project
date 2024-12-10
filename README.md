@@ -14,7 +14,8 @@ This API provides a comprehensive solution for managing a stock portfolio. It al
     - docker-compose build <- This should build the container.
     - docker-compose up -d <- This should run the container.
     - After that, you are able to access the application via: http://localhost:5000* docker-compose up -d.
-    - To close and delete the container:* docker-compose down
+      ```To close and delete the container:
+      docker-compose down
   - *Execute the smoketest before turns on the docker and virtual machine*
     ```Run the command to see result of smoketest:
     - ./smoketest.sh
