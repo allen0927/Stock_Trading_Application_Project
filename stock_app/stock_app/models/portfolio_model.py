@@ -14,6 +14,24 @@ configure_logger(logger)
 load_dotenv()
 
 class PortfolioModel:
+    """
+    Manages a user's stock portfolio.
+
+    This class interacts with the Alpha Vantage API to manage stocks, funds, 
+    and portfolio information, providing functionalities to buy, sell, and 
+    view stocks, as well as update stock prices and calculate portfolio values.
+
+    Attributes:
+        _API_KEY (str): Alpha Vantage API key, retrieved from the environment variables.
+        ts (TimeSeries): TimeSeries object for fetching stock price data.
+        fd (FundamentalData): FundamentalData object for fetching company data.
+        userID (str): User identifier.
+        holding_stocks (Dict[str, Stock]): Dictionary of stocks in the user's portfolio.
+        funds (float): Available funds in the portfolio.
+
+    Raises:
+        ValueError: If the API key is not found in the environment variables.
+    """
     _API_KEY = os.getenv("ALPHAVANTAGE_API_KEY")
     if not _API_KEY:
         raise ValueError("Retrieval of API key failed, check the environment variable")
@@ -21,6 +39,13 @@ class PortfolioModel:
     fd = FundamentalData(_API_KEY)
 
     def __init__(self, funds=None, userid=None):
+        """
+        Initializes the PortfolioModel instance.
+
+        Args:
+            funds (float, optional): Initial funds for the portfolio. Defaults to None.
+            userid (str, optional): User identifier. Defaults to None.
+        """
         self.userID = userid
         self.holding_stocks: Dict[str, Stock] = {}
         self.funds = funds
@@ -28,7 +53,8 @@ class PortfolioModel:
 
     def profile_charge_funds(self, value: float) -> None:
         """
-        Adds funds to the user's portfolio.
+        Charge the funds to the user's portfolio, increment user's available balance.
+
         Args:
             value (float): The amount of funds to add.
 
@@ -42,8 +68,10 @@ class PortfolioModel:
 
     def display_portfolio(self) -> List[Dict]:
         """
-        Displays the user's current stock holdings, including quantity,
-        current price, total value, and overall portfolio value.
+        Displays the user's current stock holdings and total portfolio value.
+
+        Returns:
+            dict: A summary of the portfolio, including each stock's details and the total value.
         """
         portfolio_summary = []
         total_portfolio_value = self.funds
@@ -64,8 +92,16 @@ class PortfolioModel:
 
     def look_up_stock(self, symbol: str) -> Dict:
         """
-        Provides detailed information about a specific stock,
-        including its current price and company description.
+        Fetches detailed information about a stock by calling lookup_stock function in stock_model.
+
+        Args:
+            symbol (str): The stock ticker symbol.
+
+        Returns:
+            dict: A dictionary containing stock details.
+
+        Raises:
+            Exception: If there is an error during the stock lookup.
         """
         try:
             stock_info = lookup_stock(symbol, self.ts, self.fd)
@@ -77,16 +113,16 @@ class PortfolioModel:
 
     def update_latest_price(self, symbol: str) -> float:
         """
-        Retrieves the latest stock price from the Alpha Vantage API and updates the price of a Stock in holdings.
+        Retrieves latest price of specified stock and updates the latest stock price in the user's holdings.
 
         Args:
-            symbol (str): The stock symbol to update.
+            symbol (str): The stock ticker symbol.
 
         Returns:
-            float: The latest price of the stock.
+            float: The updated latest price of the stock.
 
         Raises:
-            ValueError: If the stock price could not be retrieved.
+            ValueError: If the stock price cannot be retrieved.
         """
         try:
             latest_price = get_latest_price(symbol, self.ts)
@@ -100,14 +136,13 @@ class PortfolioModel:
 
     def calculate_portfolio_value(self) -> float:
         """
-        Calculates the total value of the user's investment portfolio in real-time,
-        reflecting the latest stock prices.
+        Calculates the total portfolio value, including funds and stocks.
 
         Returns:
-            float: The total value of the portfolio.
+            float: The total portfolio value.
 
         Raises:
-            Exception: If there is an error calculating the value.
+            Exception: If there is an error during calculation.
         """
         try:
             total_value = self.funds
@@ -122,14 +157,13 @@ class PortfolioModel:
 
     def calculate_asset_value(self) -> float:
         """
-        Calculates the total value of the user's investment portfolio in real-time,
-        reflecting the latest stock prices.
+        Calculates the total value of the user's assets in the portfolio.
 
         Returns:
-            float: The total value of the portfolio.
+            float: The total asset value based on current stock prices.
 
         Raises:
-            Exception: If there is an error calculating the value.
+            Exception: If there is an error during calculation.
         """
         try:
             total_value = 0
@@ -145,6 +179,15 @@ class PortfolioModel:
 
     def buy_stock(self, symbol: str, quantity: int) -> None:
         """
+        Buys a specified quantity of a stock and updates the portfolio.
+
+        Args:
+            symbol (str): The stock ticker symbol.
+            quantity (int): The quantity of shares to buy.
+
+        Raises:
+            ValueError: If the quantity is invalid or funds are insufficient.
+            Exception: For API or unexpected errors.
         """
         if quantity < 1:
             raise ValueError("Quantity must be at least 1.")
@@ -181,6 +224,15 @@ class PortfolioModel:
 
     def sell_stock(self, symbol: str, quantity: int) -> None:
         """
+        Sells a specified quantity of a stock from the portfolio.
+
+        Args:
+            symbol (str): The stock ticker symbol.
+            quantity (int): The quantity of shares to sell.
+
+        Raises:
+            ValueError: If the quantity is invalid or insufficient shares are available.
+            Exception: For API or unexpected errors.
         """
         if quantity < 1:
             raise ValueError("Quantity must be at least 1.")
@@ -194,14 +246,11 @@ class PortfolioModel:
             raise ValueError(f"Not enough shares to sell. Owned: {stock.quantity}, Requested: {quantity}")
 
         try:
-            # Get the latest price
             latest_price = get_latest_price(symbol, self.ts)
             total_revenue = latest_price * quantity
 
-            # Update stock quantity or remove it from the portfolio if all shares are sold
             stock.quantity -= quantity
 
-            # Add the revenue to funds
             self.funds += total_revenue
 
             logger.info(f"Sold {quantity} shares of {symbol} at ${latest_price:.2f} each.")
@@ -211,25 +260,24 @@ class PortfolioModel:
 
     def add_interested_stock(self, symbol: str) -> None:
         """
-        Adds a stock to the user's holdings but sets the quantity to 0.
+        Adds a stock to the user's portfolio with zero quantity.
 
-        This method is used when the user is interested in a new stock but not buying it.
+        This allows the user to track a stock without holding any shares.
 
         Args:
-            symbol (str): The stock's ticker symbol.
+            symbol (str): The stock ticker symbol.
 
         Raises:
-            ValueError: If the stock symbol is invalid or an error occurs during the API request.
+            ValueError: If the stock symbol is already in the portfolio.
+            Exception: For API or unexpected errors.
         """
         try:
             if symbol in self.holding_stocks:
                 raise ValueError(f"The stock {symbol} is already existed in the stocks")
 
-            # Fetch stock details using the API
             stock_info = lookup_stock(symbol, self.ts, self.fd)
             latest_price = get_latest_price(symbol, self.ts)
 
-            # Add stock to holdings with quantity set to 0 (or specified value)
             self.holding_stocks[symbol] = Stock(
                 symbol = stock_info["symbol"],
                 name = stock_info["name"],
@@ -247,15 +295,16 @@ class PortfolioModel:
 
     def remove_interested_stock(self, symbol: str) -> None:
         """
-        Removes a stock from the user's holdings. If the user holds any shares of this stock,
-        all shares are sold before removal.
+        Removes a stock from the user's portfolio.
+
+        If the stock has shares, they are sold before removal.
 
         Args:
-            symbol (str): The stock's ticker symbol.
+            symbol (str): The stock ticker symbol.
 
         Raises:
-            ValueError: If the stock symbol is invalid or not in the user's holdings.
-            Exception: If an error occurs while selling the stock or removing it.
+            ValueError: If the stock is not in the portfolio.
+            Exception: For API or unexpected errors.
         """
         if symbol not in self.holding_stocks:
             raise ValueError(f"Stock {symbol} is not in your holdings.")
@@ -263,12 +312,10 @@ class PortfolioModel:
         try:
             stock = self.holding_stocks[symbol]
 
-            # Sell all shares of the stock if the quantity is greater than 0
             if stock.quantity > 0:
                 logger.info(f"Selling all shares of {symbol} before removing it.")
                 self.sell_stock(symbol, stock.quantity)
 
-            # Remove the stock from holdings
             del self.holding_stocks[symbol]
             logger.info(f"Removed {symbol} from holdings.")
         except Exception as e:
@@ -276,27 +323,30 @@ class PortfolioModel:
             raise
 
     def clear_all_stocks(self) -> None:
-        """Clear all the stocks and set the funds to 0.0"""
-        self.holding_stocks = {}  # Corrected attribute
+        """
+        Clear all the stocks and set the funds to 0.0
+        """
+        self.holding_stocks = {}
         self.funds = 0.0
         logger.info("All stocks cleared and funds reset to 0.0.")
 
     def load_stock(self, stock: Stock) -> None:
         """
-        Add the given stock to holding_stocks. If the stock already exists, update its quantity.
-        Used for initial loading of user stocks data stored in mongodb
-        
+        Adds a stock to the portfolio or updates its quantity if already present.
+
+        This method is useful for initializing the portfolio from stored data in mongo db.
+
         Args:
-            stock (Stock): The stock to add or update in the portfolio.
+            stock (Stock): The stock to add or update.
+
+        Raises:
+            Exception: For unexpected errors during stock loading.
         """
-        # Check if the stock already exists in holding_stocks
         if stock.symbol in self.holding_stocks:
             existing_stock = self.holding_stocks[stock.symbol]
             
-            # Update the quantity of the existing stock
             existing_stock.quantity += stock.quantity
 
-            # Optionally, update other fields if necessary (e.g., current_price, market_cap)
             existing_stock.current_price = stock.current_price
             existing_stock.market_cap = stock.market_cap
 
@@ -306,12 +356,22 @@ class PortfolioModel:
                 existing_stock.quantity
             )
         else:
-            # Add the stock to holding_stocks
             self.holding_stocks[stock.symbol] = stock
             logger.info("Added new stock: %s with quantity %d.", stock.symbol, stock.quantity)
 
     def get_stock_holdings(self):
+        """Retrieves the user's current stock holdings.
+
+        Returns:
+            Dict[str, Stock]: A dictionary of stocks in the portfolio.
+        """
         return self.holding_stocks
     
     def get_funds(self):
+        """
+        Retrieves the current available funds in the portfolio.
+
+        Returns:
+            float: The current funds available.
+        """
         return self.funds
