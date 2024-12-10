@@ -7,6 +7,24 @@ CS 411 Final Project: Ting-Hung Jen
 This API provides a comprehensive solution for managing a stock portfolio. It allows users to perform operations such as user authentication, portfolio management, stock transactions (buy/sell), retrieving stock data, and updating portfolio details. The application integrates with the Alpha Vantage API to fetch real-time stock data and utilizes a database for managing user data and portfolios.
 
 ---
+###Running the Application
+  - *Run the docker-compose.yml file given with steps:*
+    - docker-compose build <- This should build the container.
+    - docker-compose up -d <- This should run the container.
+    - After that, you are able to access the application via: http://localhost:5000* docker-compose up -d.
+    - To close and delete the container:* docker-compose down
+  - *Run the vertual machine given with steps:*
+    - source setup_venv.sh
+  - *Execute the smoketest before turns on the docker and virtual machine*
+    ```Run the command to see result of smoketest:
+    - ./smoketest.sh
+  - *Execute the unit test before turns on the docker and virtual machine*
+    ```Run the command to see result of unit tests:
+    PYTHONPATH=$(pwd) pytest tests/selected_test_to_execute
+**Now you can run the pytests.**
+- **.env variable description**
+  - * API KEY: The api key for AlphaVantage that will be used for retrieving information from API
+
 
 ## API Routes
 
@@ -175,21 +193,3 @@ The application includes additional endpoints for operations such as:
   - Update Stock Prices
   - Calculate Portfolio/Asset Values
   - Each route follows a similar format and functionality. Please refer to the application code for detailed specifications.
-
-- **Running the Application**
-  - *Run the docker-compose.yml file given with steps:*
-    - docker-compose build <- This should build the container.
-    - docker-compose up -d <- This should run the container.
-    - After that, you are able to access the application via: http://localhost:5000* docker-compose up -d.
-    - To close and delete the container:* docker-compose down
-  - *Run the vertual machine given with steps:*
-    - source setup_venv.sh
-  - *Execute the smoketest before turns on the docker and virtual machine*
-    ```Run the command to see result of smoketest:
-    - ./smoketest.sh
-  - *Execute the unit test before turns on the docker and virtual machine*
-    ```Run the command to see result of unit tests:
-    PYTHONPATH=$(pwd) pytest tests/selected_test_to_execute
-**Now you can run the pytests.**
-- **.env variable description**
-  - * API KEY: The api key for AlphaVantage that will be used for retrieving information from API
