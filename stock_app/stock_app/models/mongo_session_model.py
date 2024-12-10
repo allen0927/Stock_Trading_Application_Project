@@ -12,19 +12,19 @@ configure_logger(logger)
 
 def login_user(user_id: int, portfolio_model) -> None:
     """
-    Load the user's combatants from MongoDB into the BattleModel's combatants list.
+    Logs in a user by loading their session data from MongoDB.
 
-    Checks if a session document exists for the given `user_id` in MongoDB.
-    If it exists, clears any current combatants in `battle_model` and loads
-    the stored combatants from MongoDB into `battle_model`.
-
-    If no session is found, it creates a new session document for the user
-    with an empty combatants list in MongoDB.
+    If a session document exists for the given `user_id`, it loads the user's 
+    portfolio data (stock holdings and funds) into the provided `portfolio_model`. 
+    If no session is found, a new session document is created in MongoDB with 
+    an empty stock holdings list and zero funds.
 
     Args:
         user_id (int): The ID of the user whose session is to be loaded.
-        battle_model (BattleModel): An instance of `BattleModel` where the user's combatants
-                                    will be loaded.
+        portfolio_model: An instance of `PortfolioModel` to populate with the user's data.
+
+    Raises:
+        ValueError: If an error occurs while interacting with MongoDB.
     """
     logger.info("Attempting to log in user with ID %d.", user_id)
     session = sessions_collection.find_one({"user_id": user_id})
@@ -33,16 +33,13 @@ def login_user(user_id: int, portfolio_model) -> None:
         logger.info("Session found for user ID %d. Loading stocks into PortfolioModel.", user_id)
         portfolio_model.clear_all_stocks()
 
-        # Load stock holdings from the session (default to an empty dict if missing)
         stock_holdings = session.get("stock_holdings", {})
         funds = session.get("funds", 0.0)
         portfolio_model.profile_charge_funds(funds)
 
-        # Iterate over the stock holdings dictionary
         for symbol, stock_data in stock_holdings.items():
             logger.debug("Preparing stock: %s (%s)", symbol, stock_data)
             
-            # Create a Stock object from the loaded stock data
             stock = Stock(
                 symbol=stock_data["symbol"],
                 name=stock_data["name"],
@@ -54,7 +51,6 @@ def login_user(user_id: int, portfolio_model) -> None:
                 quantity=stock_data["quantity"],
             )
             
-            # Load the stock into the portfolio model
             portfolio_model.load_stock(stock)
         
 
@@ -66,29 +62,23 @@ def login_user(user_id: int, portfolio_model) -> None:
 
 def logout_user(user_id: int, portfolio_model) -> None:
     """
-    Store the current combatants from the BattleModel back into MongoDB.
+    Logs out a user by saving their portfolio data to MongoDB.
 
-    Retrieves the current combatants from `battle_model` and attempts to store them in
-    the MongoDB session document associated with the given `user_id`. If no session
-    document exists for the user, raises a `ValueError`.
-
-    After saving the combatants to MongoDB, the combatants list in `battle_model` is
-    cleared to ensure a fresh state for the next login.
+    Retrieves the user's current portfolio (stocks and funds) from the 
+    `portfolio_model` and updates the corresponding MongoDB session document. 
+    Clears the user's portfolio in `portfolio_model` after saving.
 
     Args:
         user_id (int): The ID of the user whose session data is to be saved.
-        battle_model (BattleModel): An instance of `BattleModel` from which the user's
-                                    current combatants are retrieved.
+        portfolio_model: An instance of `PortfolioModel` containing the user's data.
 
     Raises:
         ValueError: If no session document is found for the user in MongoDB.
     """
     logger.info("Attempting to log out user with ID %d.", user_id)
 
-    # Get the stock holdings from the portfolio model
     stocks_data = portfolio_model.get_stock_holdings()
 
-    # Convert Stock objects to dictionaries for MongoDB storage
     stocks_dict = {
         symbol: {
             "symbol": stock.symbol,
@@ -103,13 +93,11 @@ def logout_user(user_id: int, portfolio_model) -> None:
         for symbol, stock in stocks_data.items()
     }
 
-    # Get the funds from the portfolio model
     funds = portfolio_model.get_funds()
 
     logger.debug("Serialized stock holdings for user ID %d: %s", user_id, stocks_dict)
     logger.debug("Serialized funds for user ID %d: %f", user_id, funds)
 
-    # Update the stock_holdings and funds in the session document
     result = sessions_collection.update_one(
         {"user_id": user_id},
         {
@@ -118,7 +106,7 @@ def logout_user(user_id: int, portfolio_model) -> None:
                 "funds": funds
             }
         },
-        upsert=False  # Prevents creating a new document if not found
+        upsert=False
     )
 
     if result.matched_count == 0:
@@ -127,6 +115,5 @@ def logout_user(user_id: int, portfolio_model) -> None:
 
     logger.info("Stock holdings and funds successfully saved for user ID %d. Clearing PortfolioModel stocks.", user_id)
 
-    # Clear the portfolio model's stocks after saving
     portfolio_model.clear_all_stocks()
     logger.info("PortfolioModel stocks cleared for user ID %d.", user_id)
