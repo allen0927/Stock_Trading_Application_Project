@@ -141,7 +141,7 @@ The Stock Trading Application is a comprehensive web-based system designed to ma
     ```bash
     curl -X POST -H "Content-Type: application/json" -d '{"username": "example_user"}' http://localhost:5000/api/logout
 
-- **4. Stock Operations**
+### 4. Stock Operations**
 - **Get Stock by Symbol**
   - **Path:** `/api/get-stock-by-symbol`
   - **Request Type:** `GET`
@@ -165,7 +165,7 @@ The Stock Trading Application is a comprehensive web-based system designed to ma
     ```bash
     curl -X GET "http://localhost:5000/api/get-stock-by-symbol?symbol=IBM"
 
-- **5. Portfolio Management**
+### 5. Portfolio Management**
 - **Display Portfolio**
   - **Path:** `/api/display-portfolio`
   - **Request Type:** `GET`
@@ -190,98 +190,195 @@ The Stock Trading Application is a comprehensive web-based system designed to ma
     ```bash
     curl -X GET http://localhost:5000/api/display-portfolio
 
-- **Additional Routes**
-The application includes additional endpoints for operations such as:
+### 6. Add/Remove Funds**
+- **Buy Stocks**
+  - **Path:** `/api/buy-stock`
+  - **Request Type:** `POST`
+  - **Purpose:** `Buy shares of a stock.`
+  - **Request Format:** `Query parameter: ?symbol=<stock-symbol>&quantity=<number of shares>`
+  - **Response Format:**
+    ```json
+    {
+      "status": "success",
+    }
+  - **Example:**
+    ```bash
+    curl -X POST -H "Content-Type: application/json" http://localhost:5000/api/buy-stock
 
-- **Add/Remove Funds**
-  - Buy/Sell Stocks
-  - Update Stock Prices
-  - Calculate Portfolio/Asset Values
-  - Each route follows a similar format and functionality. Please refer to the application code for detailed specifications.
+- **Sell Stocks**
+  - **Path:** `/api/sell-stock`
+  - **Request Type:** `PUT`
+  - **Purpose:** `Sell shares of a stock.`
+  - **Request Format:** `Query parameter: ?symbol=<stock-symbol>&quantity=<number of shares>`
+  - **Response Format:**
+    ```json
+    {
+      "status": "success",
+    }
+  - **Example:**
+    ```bash
+    curl -X PUT -H "Content-Type: application/json" http://localhost:5000/api/sell-stock
+
+- **Update Stock Prices**
+  - **Path:** `/api/update-latest-price`
+  - **Request Type:** `PUT`
+  - **Purpose:** `Update latest stock price.`
+  - **Request Format:** `Query parameter: ?symbol=<stock-symbol>`
+  - **Response Format:**
+    ```json
+    {
+      "status": "success",
+      "new price": 94.32
+    }
+  - **Example:**
+    ```bash
+    curl -X PUT -H "Content-Type: application/json" http://localhost:5000/api/update-latest-price
+
+- **Calculate Portfolio Value**
+  - **Path:** `/api/calculate-portfolio-value`
+  - **Request Type:** `GET`
+  - **Purpose:** `Calculate total value of investment profile.`
+  - **Request Format:** `None`
+  - **Response Format:**
+    ```json
+    {
+      "status": "success",
+      "value": 1170000.0
+    }
+  - **Example:**
+    ```bash
+    curl -X GET http://localhost:5000/api/calculate-portfolio-value
+
+- **Calculate Asset Value**
+  - **Path:** `/api/calculate-asset-value`
+  - **Request Type:** `GET`
+  - **Purpose:** `Calculate total value of invested stocks.`
+  - **Request Format:** `None`
+  - **Response Format:**
+    ```json
+    {
+      "status": "success",
+      "value": 69900.0
+    }
+  - **Example:**
+    ```bash
+    curl -X GET http://localhost:5000/api/calculate-asset-value
+
 
 - **Sample smoketest result when API call achieve limit**
   ```bash
   Checking health status...
-  Service is healthy.
-  Initializing the database...
-  Database initialized successfully.
-  Creating a new user...
-  User created successfully.
-  Logging in user...
-  User logged in successfully.
-  Getting stock info by symbol (IBM)
-  Failed to get stock by symbol (IBM).
-  {
-    "error": "Thank you for using Alpha Vantage! Our standard API rate limit is 25 requests per day. Please subscribe to any of the premium plans at https://www.alphavantage.co/premium/ to instantly remove all daily rate limits."
+Service is healthy.
+Initializing the database...
+Database initialized successfully.
+Creating a new user...
+User created successfully.
+Logging in user...
+User logged in successfully.
+Getting stock info by symbol (IBM)
+Getting stock info by symbol (IBM)
+Stock retrieved successfully by symbol (IBM).
+{
+  "status": "success",
+  "stock": {
+    "current_price": 231.76,
+    "description": "International Business Machines Corporation (IBM) is an American multinational technology company headquartered in Armonk, New York, with operations in over 170 countries. The company began in 1911, founded in Endicott, New York, as the Computing-Tabulating-Recording Company (CTR) and was renamed International Business Machines in 1924. IBM is incorporated in New York. IBM produces and sells computer hardware, middleware and software, and provides hosting and consulting services in areas ranging from mainframe computers to nanotechnology. IBM is also a major research organization, holding the record for most annual U.S. patents generated by a business (as of 2020) for 28 consecutive years. Inventions by IBM include the automated teller machine (ATM), the floppy disk, the hard disk drive, the magnetic stripe card, the relational database, the SQL programming language, the UPC barcode, and dynamic random-access memory (DRAM). The IBM mainframe, exemplified by the System/360, was the dominant computing platform during the 1960s and 1970s.",
+    "industry": "COMPUTER & OFFICE EQUIPMENT",
+    "market_cap": "212668350000",
+    "name": "International Business Machines",
+    "sector": "TECHNOLOGY",
+    "symbol": "IBM"
   }
-  Getting stock historical data for symbol (AAPL) with size (full)...
-  Failed to get stock historical data for symbol (AAPL).
-  Response:
-  Getting stock latest price for symbol (IBM)...
-  Failed to get stock latest price for symbol (IBM).
-  Response:
-  {
-    "error": "Thank you for using Alpha Vantage! Our standard API rate limit is 25 requests per day. Please subscribe to any of the premium plans at https://www.alphavantage.co/premium/ to instantly remove all daily rate limits."
-  }
-  Adding 390000.00 worth of funds...
-  Added 390000.00 of funds.
-  {
-    "status": "success"
-  }
-  Buying (4) shares of stock (IBM)...
-  Purchase failed.
-  {
-    "error": "Thank you for using Alpha Vantage! Our standard API rate limit is 25 requests per day. Please subscribe to any of the premium plans at https://www.alphavantage.co/premium/ to instantly remove all daily rate limits."
-  }
-  Buying (4) shares of stock (SBUX)...
-  Purchase failed.
-  {
-    "error": "Thank you for using Alpha Vantage! Our standard API rate limit is 25 requests per day. Please subscribe to any of the premium plans at https://www.alphavantage.co/premium/ to instantly remove all daily rate limits."
-  }
-  Selling (1) shares of stock (SBUX)...
-  Sell failed.
-  {
-    "error": "Stock SBUX is not in your portfolio."
-  }
-  Removing stock (SBUX)...
-  Remove failed.
-  {
-    "error": "stock not in portfolio"
-  }
-  Buying (8) shares of stock (IBM)...
-  Purchase failed.
-  {
-    "error": "Thank you for using Alpha Vantage! Our standard API rate limit is 25 requests per day. Please subscribe to any of the premium plans at https://www.alphavantage.co/premium/ to instantly remove all daily rate limits."
-  }
-  Getting user portfolio
-  User portfolio retrieved successfully.
-  {
-    "portfolio": {
-      "portfolio": [],
-      "total_value": 390000.0
-    },
-    "status": "success"
-  }
-  Calculating user portfolio value
-  Calculation success.
-  {
-    "status": "success",
-    "value": 390000.0
-  }
-  Getting stock holdings...
-  Get holdings successful.
-  {
-    "holdings": {},
-    "status": "success"
-  }
-  Getting funds...
-  Get holdings successful.
-  {
-    "funds": 390000.0,
-    "status": "success"
-  }
-  Logging out user...
-  User logged out successfully.
-  All tests passed successfully!
-- Some of the test result is generating error due to the error originated from free API key's limit
-  - the **sell stock** and **remove stock** is generating error due to the failure of buy stock, so the stock that should be bought into the holdings did not added successfully, resulting failure in removal and sell 
+}
+Getting stock historical data for symbol (AAPL) with size (full)...
+Stock historical data retrieved successfully for symbol (AAPL).
+{
+  "status": "success"
+  #full output JSON redacted due to length
+}
+Getting stock latest price for symbol (IBM)...
+Stock latest price retrieved successfully for symbol (IBM).
+{
+  "price": 231.76,
+  "status": "success"
+}
+Adding 390000.00 worth of funds...
+Added 390000.00 of funds.
+{
+  "status": "success"
+}
+Buying (4) shares of stock (IBM)...
+Purchase successful.
+{
+  "status": "success"
+}
+Buying (4) shares of stock (SBUX)...
+Purchase successful.
+{
+  "status": "success"
+}
+Selling (1) shares of stock (SBUX)...
+Sell successful.
+{
+  "status": "success"
+}
+Removing stock (SBUX)...
+Remove successful.
+{
+  "status": "success"
+}
+Buying (8) shares of stock (IBM)...
+Purchase successful.
+{
+  "status": "success"
+}
+Getting user portfolio
+User portfolio retrieved successfully.
+{
+  "portfolio": {
+    "portfolio": [
+      {
+        "current_price": 231.76,
+        "name": "International Business Machines",
+        "quantity": 12,
+        "symbol": "IBM",
+        "total_value": 2781.12
+      }
+    ],
+    "total_value": 1170000.0
+  },
+  "status": "success"
+}
+Calculating user portfolio value
+Calculation success.
+{
+  "status": "success",
+  "value": 1170000.0
+}
+Getting stock holdings...
+Get holdings successful.
+{
+  "holdings": {
+    "IBM": {
+      "current_price": 231.76,
+      "description": "International Business Machines Corporation (IBM) is an American multinational technology company headquartered in Armonk, New York, with operations in over 170 countries. The company began in 1911, founded in Endicott, New York, as the Computing-Tabulating-Recording Company (CTR) and was renamed International Business Machines in 1924. IBM is incorporated in New York. IBM produces and sells computer hardware, middleware and software, and provides hosting and consulting services in areas ranging from mainframe computers to nanotechnology. IBM is also a major research organization, holding the record for most annual U.S. patents generated by a business (as of 2020) for 28 consecutive years. Inventions by IBM include the automated teller machine (ATM), the floppy disk, the hard disk drive, the magnetic stripe card, the relational database, the SQL programming language, the UPC barcode, and dynamic random-access memory (DRAM). The IBM mainframe, exemplified by the System/360, was the dominant computing platform during the 1960s and 1970s.",
+      "industry": "COMPUTER & OFFICE EQUIPMENT",
+      "market_cap": "212668350000",
+      "name": "International Business Machines",
+      "quantity": 12,
+      "sector": "TECHNOLOGY",
+      "symbol": "IBM"
+    }
+  },
+  "status": "success"
+}
+Getting funds...
+Get holdings successful.
+{
+  "funds": 1167218.88,
+  "status": "success"
+}
+Logging out user...
+User logged out successfully.
+All tests passed successfully!
+ 

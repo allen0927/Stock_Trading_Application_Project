@@ -337,7 +337,7 @@ create_user
 login_user
 
 get_stock_by_symbol "IBM"
-stock_historical_data "AAPL" "full"
+#stock_historical_data "AAPL" "full"    test works, commented out because response JSON too long
 get_latest_price "IBM"
 
 profile_charge_funds 390000.00
