@@ -92,39 +92,6 @@ def lookup_stock(symbol: str, ts: TimeSeries, fd: FundamentalData) -> dict:
         raise ValueError(f"Unexpected error: {str(e)}")
 
 
-def get_stock_by_symbol(symbol: str, ts: TimeSeries, fd: FundamentalData) -> Stock:
-    """
-    Retrieve detailed stock information from API call and store as a `Stock` object.
-
-    Args:
-        symbol (str): The stock ticker symbol.
-        ts (TimeSeries): An Alpha Vantage TimeSeries object for fetching stock price data.
-        fd (FundamentalData): An Alpha Vantage FundamentalData object for fetching company overview.
-
-    Returns:
-        Stock: A `Stock` object containing detailed information about the stock.
-
-    Raises:
-        ValueError: If the stock symbol is invalid or no data is retrieved.
-        Exception: For API or unexpected errors.
-    """
-    try:
-        stock_info = lookup_stock(symbol, ts, fd)
-        return Stock(
-            symbol = stock_info["symbol"],
-            name = stock_info["name"],
-            current_price = stock_info["current_price"],
-            description = stock_info["description"],
-            sector = stock_info["sector"],
-            industry = stock_info["industry"],
-            market_cap = stock_info["market_cap"],
-            quantity = 0
-        )
-    except Exception as e:
-        logger.error(f"Error fetching stock data for symbol {symbol}: {e}")
-        raise ValueError(f"Unexpected error: {str(e)}")
-
-
 def stock_historical_data(symbol: str, ts: TimeSeries, size: str) -> list[dict]:
     """
     Fetch historical price data for a stock.
@@ -143,7 +110,7 @@ def stock_historical_data(symbol: str, ts: TimeSeries, size: str) -> list[dict]:
         Exception: For API or unexpected errors.
     """
     try:
-        data = ts.get_daily_adjusted(symbol=symbol, outputsize=size)
+        data = ts.get_daily(symbol=symbol, outputsize=size)
         if not data or len(data) < 2:
             raise ValueError(f"No historical data found for symbol {symbol}")
 
