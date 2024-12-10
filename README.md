@@ -194,3 +194,88 @@ The application includes additional endpoints for operations such as:
   - Update Stock Prices
   - Calculate Portfolio/Asset Values
   - Each route follows a similar format and functionality. Please refer to the application code for detailed specifications.
+
+- **Sample smoketest result when API call achieve limit**
+  ```bash
+  Checking health status...
+  Service is healthy.
+  Initializing the database...
+  Database initialized successfully.
+  Creating a new user...
+  User created successfully.
+  Logging in user...
+  User logged in successfully.
+  Getting stock info by symbol (IBM)
+  Failed to get stock by symbol (IBM).
+  {
+    "error": "Thank you for using Alpha Vantage! Our standard API rate limit is 25 requests per day. Please subscribe to any of the premium plans at https://www.alphavantage.co/premium/ to instantly remove all daily rate limits."
+  }
+  Getting stock historical data for symbol (AAPL) with size (full)...
+  Failed to get stock historical data for symbol (AAPL).
+  Response:
+  Getting stock latest price for symbol (IBM)...
+  Failed to get stock latest price for symbol (IBM).
+  Response:
+  {
+    "error": "Thank you for using Alpha Vantage! Our standard API rate limit is 25 requests per day. Please subscribe to any of the premium plans at https://www.alphavantage.co/premium/ to instantly remove all daily rate limits."
+  }
+  Adding 390000.00 worth of funds...
+  Added 390000.00 of funds.
+  {
+    "status": "success"
+  }
+  Buying (4) shares of stock (IBM)...
+  Purchase failed.
+  {
+    "error": "Thank you for using Alpha Vantage! Our standard API rate limit is 25 requests per day. Please subscribe to any of the premium plans at https://www.alphavantage.co/premium/ to instantly remove all daily rate limits."
+  }
+  Buying (4) shares of stock (SBUX)...
+  Purchase failed.
+  {
+    "error": "Thank you for using Alpha Vantage! Our standard API rate limit is 25 requests per day. Please subscribe to any of the premium plans at https://www.alphavantage.co/premium/ to instantly remove all daily rate limits."
+  }
+  Selling (1) shares of stock (SBUX)...
+  Sell failed.
+  {
+    "error": "Stock SBUX is not in your portfolio."
+  }
+  Removing stock (SBUX)...
+  Remove failed.
+  {
+    "error": "stock not in portfolio"
+  }
+  Buying (8) shares of stock (IBM)...
+  Purchase failed.
+  {
+    "error": "Thank you for using Alpha Vantage! Our standard API rate limit is 25 requests per day. Please subscribe to any of the premium plans at https://www.alphavantage.co/premium/ to instantly remove all daily rate limits."
+  }
+  Getting user portfolio
+  User portfolio retrieved successfully.
+  {
+    "portfolio": {
+      "portfolio": [],
+      "total_value": 390000.0
+    },
+    "status": "success"
+  }
+  Calculating user portfolio value
+  Calculation success.
+  {
+    "status": "success",
+    "value": 390000.0
+  }
+  Getting stock holdings...
+  Get holdings successful.
+  {
+    "holdings": {},
+    "status": "success"
+  }
+  Getting funds...
+  Get holdings successful.
+  {
+    "funds": 390000.0,
+    "status": "success"
+  }
+  Logging out user...
+  User logged out successfully.
+  All tests passed successfully!
