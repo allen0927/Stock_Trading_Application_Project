@@ -38,7 +38,7 @@ class PortfolioModel:
     ts = TimeSeries(_API_KEY)
     fd = FundamentalData(_API_KEY)
 
-    def __init__(self, funds=None, userid=None):
+    def __init__(self, funds=0.0, userid=None):
         """
         Initializes the PortfolioModel instance.
 
