@@ -12,10 +12,12 @@ from stock_app.models.user_model import Users
 
 from alpha_vantage.timeseries import TimeSeries
 from alpha_vantage.fundamentaldata import FundamentalData
-
+import os
 # Load environment variables from .env file
 load_dotenv()
-
+_API_KEY = os.getenv("ALPHAVANTAGE_API_KEY")
+out_ts = TimeSeries(_API_KEY)
+out_fd = FundamentalData(_API_KEY)
 def create_app(config_class=ProductionConfig):
     app = Flask(__name__)
     app.config.from_object(config_class)
@@ -253,87 +255,95 @@ def create_app(config_class=ProductionConfig):
 
 
     @app.route('/api/get-stock-by-symbol', methods=['GET'])
-    def get_stock_by_symbol(symbol: str) -> Response:
-        """Route to retrieve stock info using the API.
-
-        Path Parameter:
-            - symbol (str): The stock ticker's symbol.
-
-        Returns:
-            JSON response with the stock details or error message.
-
-        Raises:
-            400 error if no input
-            500 error there was an issue retrieving stock info
-        """
+    def fetch_stock_info() -> Response:
+        """Route to retrieve stock info using the API."""
         try:
-            app.logger.info(f"Retrieving stock info: {symbol}")
+            # Retrieve the symbol from query parameters
+            symbol = request.args.get('symbol')
+            app.logger.info(f"Retrieving stock info for symbol: {symbol}")
 
+            # Check if the symbol is provided
             if not symbol:
                 return make_response(jsonify({'error': 'Stock symbol is required'}), 400)
 
-            stock = get_stock_by_symbol(symbol, PortfolioModel.ts, PortfolioModel.fd)
+            # Call the lookup_stock function
+            stock = lookup_stock(symbol, out_ts, out_fd)
             return make_response(jsonify({'status': 'success', 'stock': stock}), 200)
-        
+
+        except ValueError as ve:
+            app.logger.error(f"Validation error: {ve}")
+            return make_response(jsonify({'error': str(ve)}), 400)
         except Exception as e:
             app.logger.error(f"Error retrieving stock: {e}")
             return make_response(jsonify({'error': str(e)}), 500)
 
 
-    @app.route('/api/stock-historical-data', methods=['GET'])
-    def stock_historical_data(symbol: str, size: str) -> Response:
-        """Route to retrieve price data for a stock within a specific date range.
+    @app.route('/api/retrieve-stock-historical-data', methods=['GET'])
+    def retrieve_stock_historical_data() -> Response:
+        """
+        Route to retrieve price data for a stock within a specific date range.
 
-        Path Parameter:
+        Query Parameters:
             - symbol (str): The stock ticker's symbol.
+            - size (str): The size of the data (e.g., "full" or "compact").
 
         Returns:
             JSON response with the stock data or error message.
 
         Raises:
-            400 error if no input
-            500 error there was an issue retrieving stock info
+            400 error if no input is provided.
+            500 error if there is an issue retrieving stock info.
         """
         try:
-            app.logger.info(f"Retrieving stock historical data: {symbol}")
+            # Retrieve query parameters
+            symbol = request.args.get('symbol')
+            size = request.args.get('size')
 
-            if not symbol:
-                return make_response(jsonify({'error': 'Stock symbol is required'}), 400)
+            app.logger.info(f"Retrieving stock historical data for symbol: {symbol}, size: {size}")
 
-            data = stock_historical_data(symbol, PortfolioModel.ts, size)
+            # Validate input
+            if not symbol or not size:
+                return make_response(jsonify({'error': 'Both symbol and size are required'}), 400)
+
+            # Call the function to fetch historical data
+            data = stock_historical_data(symbol, out_ts, size)  # Replace with your function to get historical data
             return make_response(jsonify({'status': 'success', 'data': data}), 200)
-        
+
         except Exception as e:
-            app.logger.error(f"Error retrieving stock: {e}")
+            app.logger.error(f"Error retrieving stock historical data: {e}")
             return make_response(jsonify({'error': str(e)}), 500)
 
-
-    @app.route('/api/get-latest-price', methods = ['GET'])
-    def get_latest_price(symbol: str) -> Response:
+    @app.route('/api/fetch-latest-price', methods=['GET'])
+    def fetch_latest_price() -> Response:
         """
-        Route to get latest market price of a specific stock.
+        Route to get the latest market price of a specific stock.
 
-        Path Parameter:
+        Query Parameter:
             - symbol (str): The stock ticker's symbol.
 
         Returns:
             JSON response with the stock price or error message.
 
         Raises:
-            400 error if no input
-            500 error there was an issue retrieving stock info
+            400 error if no input is provided.
+            500 error if there is an issue retrieving the stock info.
         """
         try:
-            app.logger.info(f"Retrieving latest stock price: {symbol}")
+            # Retrieve query parameter
+            symbol = request.args.get('symbol')
 
+            app.logger.info(f"Retrieving latest stock price for symbol: {symbol}")
+
+            # Validate input
             if not symbol:
                 return make_response(jsonify({'error': 'Stock symbol is required'}), 400)
 
-            price = stock_historical_data(symbol, PortfolioModel.ts)
+            # Fetch the latest price (replace with the actual function to get price)
+            price = get_latest_price(symbol, out_ts)  # Ensure `fetch_latest_price` is implemented
             return make_response(jsonify({'status': 'success', 'price': price}), 200)
-        
+
         except Exception as e:
-            app.logger.error(f"Error retrieving stock: {e}")
+            app.logger.error(f"Error retrieving latest stock price for {symbol}: {e}")
             return make_response(jsonify({'error': str(e)}), 500)
         
 
@@ -344,31 +354,32 @@ def create_app(config_class=ProductionConfig):
     ####################################################
 
     @app.route('/api/profile-charge-funds', methods=['PUT'])
-    def profile_charge_funds(value: float) -> Response:
+    def profile_charge_funds() -> Response:
         """
         Route to add funds to user's profile.
 
-        Parameters:
-            - value (float): the value added
+        Query Parameter:
+            - value (float): the value to add
 
         Returns:
             JSON response indicating the success of adding funds.
 
         Raises:
-            400 error if value < 0
+            400 error if value < 0 or not provided.
             500 error if there is an issue adding funds.
         """
         try:
-            app.logger.info('Adding funds...')
+            value = request.args.get('value', type=float)  # Retrieve `value` as float from query
+            if value is None or value < 0:
+                return make_response(jsonify({'error': 'Value must be a positive number'}), 400)
+
+            app.logger.info(f"Adding {value} to the user's funds...")
             portfolio_model.profile_charge_funds(value)
-            app.logger.info('Funds added.')
+            app.logger.info('Funds added successfully.')
             return make_response(jsonify({'status': 'success'}), 200)
-        
-        except ValueError:
-            app.logger.error("Attempt to add negative value")
-            return make_response(jsonify({'error': 'value must be positive'}, 400))
+
         except Exception as e:
-            app.logger.error("Failed to add funds: %s", str(e))
+            app.logger.error(f"Failed to add funds: {e}")
             return make_response(jsonify({'error': str(e)}), 500)
 
 
@@ -392,59 +403,34 @@ def create_app(config_class=ProductionConfig):
             app.logger.error(f"Error retrieving portfolio: {e}")
             return make_response(jsonify({'error': str(e)}), 500)
 
-    
-    @app.route('/api/look-up-stock', methods=['GET'])
-    def look_up_stock(symbol: str) -> Response:
-        """
-        Route to look up info about a specific stock
-
-        Returns:
-            JSON response with the stock info
-
-        Raises:
-            400 error if there was a bad input
-            500 error if there is an issue showing the portfolio.
-        """
-        try:
-            app.logger.info(f"Retrieving stock info: {symbol}")
-
-            if not symbol:
-                return make_response(jsonify({'error': 'Stock symbol is required'}), 400)
-
-            info = portfolio_model.look_up_stock(symbol)
-            return make_response(jsonify({'status': 'success', 'info': info}), 200)
-        
-        except Exception as e:
-            app.logger.error(f"Error retrieving stock info: {e}")
-            return make_response(jsonify({'error': str(e)}), 500)
-
 
     @app.route('/api/update-latest-price', methods=['PUT'])
-    def update_latest_price(symbol: str) -> Response:
+    def update_latest_price() -> Response:
         """
-        Route to retrive and update latest price for a stock
+        Route to retrieve and update the latest price for a stock.
 
-        Parameters:
-            - symbol (str): the stock symbol
+        Query Parameter:
+            - symbol (str): The stock symbol.
 
         Returns:
-            JSON response indicating the success of update and latest stock price.
+            JSON response with updated price.
 
         Raises:
-            400 error if no input
-            500 error if there is an issue updating stock price.
+            400 error if symbol is not provided.
+            500 error if there is an issue updating the stock price.
         """
         try:
+            symbol = request.args.get('symbol')
+
             if not symbol:
                 return make_response(jsonify({'error': 'Stock symbol is required'}), 400)
-            
-            app.logger.info('Updating price for stock ' + symbol + ' ...')
-            value=portfolio_model.update_latest_price(symbol)
-            app.logger.info('Price updated.')
-            return make_response(jsonify({'status': 'success', 'new price': value}), 200)
-        
+
+            app.logger.info(f"Updating latest price for stock {symbol}...")
+            price = portfolio_model.update_latest_price(symbol)
+            return make_response(jsonify({'status': 'success', 'new_price': price}), 200)
+
         except Exception as e:
-            app.logger.error("Failed to add funds: %s", str(e))
+            app.logger.error(f"Error updating stock price: {e}")
             return make_response(jsonify({'error': str(e)}), 500)
 
 
@@ -494,107 +480,102 @@ def create_app(config_class=ProductionConfig):
             return make_response(jsonify({'error': str(e)}), 500)
 
 
-    @app.route('/api/buy-stock', methods=['POST', 'PUT'])
-    def buy_stock(symbol: str, quantity: int) -> Response:
+    @app.route('/api/buy-stock', methods=['POST'])
+    def buy_stock() -> Response:
         """
-        Route to buy shares of a specific stock
+        Route to buy shares of a specific stock.
 
-        Parameters:
-            - symbol (str): the stock symbol
-            - quantity (int): number of shares to buy
+        Query Parameters:
+            - symbol (str): The stock symbol.
+            - quantity (int): The number of shares to buy.
 
         Returns:
-            JSON response with purchase successful
+            JSON response with purchase success.
 
         Raises:
-            400 error if quantity < 0
-            401 error if insufficient funds
-            500 error if there is an issue computing the value.
+            400 error if quantity < 1 or input is invalid.
+            500 error if there is an issue buying the stock.
         """
-        if quantity < 1:
-            return make_response(jsonify({'error': 'quantity must be at least 1'}), 400)
-        
         try:
-            app.logger.info(f"Buying " + quantity + "shares of " + symbol + "...")
+            symbol = request.args.get('symbol')
+            quantity = request.args.get('quantity', type=int)
+
+            if not symbol or not quantity or quantity < 1:
+                return make_response(jsonify({'error': 'Symbol and positive quantity are required'}), 400)
+
+            app.logger.info(f"Buying {quantity} shares of {symbol}...")
             portfolio_model.buy_stock(symbol, quantity)
             return make_response(jsonify({'status': 'success'}), 200)
-        
-        except ValueError:
-            app.logger.error("Insufficient funds")
-            return make_response(jsonify({'error': 'insufficient funds'}), 401)
+
         except Exception as e:
             app.logger.error(f"Error buying stock: {e}")
             return make_response(jsonify({'error': str(e)}), 500)
 
 
     @app.route('/api/sell-stock', methods=['PUT'])
-    def sell_stock(symbol: str, quantity: int) -> Response:
+    def sell_stock() -> Response:
         """
-        Route to sell shares of a specific stock
+        Route to sell shares of a specific stock.
 
-        Parameters:
-            - symbol (str): the stock symbol
-            - quantity (int): number of shares to buy
+        Query Parameters:
+            - symbol (str): The stock symbol.
+            - quantity (int): The number of shares to sell.
 
         Returns:
-            JSON response with sell successful
+            JSON response with sell success.
 
         Raises:
-            400 error if quantity < 0
-            401 error if insufficient shares
-            500 error if there is an issue computing the value.
+            400 error if quantity < 1 or input is invalid.
+            500 error if there is an issue selling the stock.
         """
-        if quantity < 1:
-            return make_response(jsonify({'error': 'quantity must be at least 1'}), 400)
-        
         try:
-            app.logger.info(f"Selling " + quantity + "shares of " + symbol + "...")
+            symbol = request.args.get('symbol')
+            quantity = request.args.get('quantity', type=int)
+
+            if not symbol or not quantity or quantity < 1:
+                return make_response(jsonify({'error': 'Symbol and positive quantity are required'}), 400)
+
+            app.logger.info(f"Selling {quantity} shares of {symbol}...")
             portfolio_model.sell_stock(symbol, quantity)
             return make_response(jsonify({'status': 'success'}), 200)
-        
-        except ValueError:
-            app.logger.error("Insufficient shares")
-            return make_response(jsonify({'error': 'insufficient shares'}), 401)
+
         except Exception as e:
             app.logger.error(f"Error selling stock: {e}")
             return make_response(jsonify({'error': str(e)}), 500)
 
 
     @app.route('/api/add-interested-stock', methods=['POST'])
-    def add_interested_stock(symbol: str) -> Response:
+    def add_interested_stock() -> Response:
         """
-        Route to "favorite" a stock
+        Route to "favorite" a stock.
 
-        Parameters:
-            - symbol (str): the stock symbol
+        Query Parameters:
+            - symbol (str): The stock symbol.
 
         Returns:
-            JSON response with operation successful
+            JSON response with operation success.
 
         Raises:
-            400 error if no input
-            401 error if stock already in portfolio
-            500 error if there is an issue computing the value.
+            400 error if symbol is not provided.
+            500 error if there is an issue adding the stock.
         """
-        
         try:
+            symbol = request.args.get('symbol')
+
             if not symbol:
                 return make_response(jsonify({'error': 'Stock symbol is required'}), 400)
-            
-            app.logger.info(f"Favoriting " + symbol + "...")
+
+            app.logger.info(f"Favoriting stock {symbol}...")
             portfolio_model.add_interested_stock(symbol)
             return make_response(jsonify({'status': 'success'}), 200)
-        
-        except ValueError:
-            app.logger.error("Stock already exists in portfolio")
-            return make_response(jsonify({'error': 'stock already in portfolio'}), 401)
+
         except Exception as e:
             app.logger.error(f"Error favoriting stock: {e}")
             return make_response(jsonify({'error': str(e)}), 500)
 
 
     @app.route('/api/remove-interested-stock', methods=['DELETE'])
-    def remove_interested_stock(symbol: str) -> Response:
+    def remove_interested_stock() -> Response:
         """
         Route to sell all shares of a stock and remove from portfolio
 
@@ -609,7 +590,7 @@ def create_app(config_class=ProductionConfig):
             401 error if stock not in portfolio
             500 error if there is an issue computing the value.
         """
-        
+        symbol = request.args.get('symbol')
         try:
             if not symbol:
                 return make_response(jsonify({'error': 'Stock symbol is required'}), 400)
@@ -647,32 +628,6 @@ def create_app(config_class=ProductionConfig):
             app.logger.error(f"Error clearing portfolio: {e}")
             return make_response(jsonify({'error': str(e)}), 500)
         
-
-
-    @app.route('/api/load-stock', methods=['PUT'])
-    def load_stock(stock) -> Response:
-        """
-        Route to add given stock to portfolio
-
-        Returns:
-            JSON response with operation successful
-
-        Raises:
-            400 error if no input
-            500 error if there is an issue adding stock to portfolio.
-        """
-        
-        try:
-            if not stock:
-                return make_response(jsonify({'error': 'Stock is required'}), 400)
-            
-            app.logger.info(f"Adding stock to portfolio...")
-            portfolio_model.load_stock(stock)
-            return make_response(jsonify({'status': 'success'}), 200)
-        
-        except Exception as e:
-            app.logger.error(f"Error adding stock to portfolio: {e}")
-            return make_response(jsonify({'error': str(e)}), 500)
 
     @app.route('/api/get-stock-holdings', methods=['GET'])
     def get_stock_holdings() -> Response:
